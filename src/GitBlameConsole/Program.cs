@@ -82,7 +82,7 @@ namespace GitBlameConsole
 					do
 					{
 						line = reader.ReadLine();
-						tagValue = SplitOnSpace(line);
+						tagValue = line.SplitOnSpace();
 						tagValues.Add(tagValue.Item1, tagValue.Item2);
 					} while (tagValue.Item1 != "filename");
 
@@ -122,7 +122,7 @@ namespace GitBlameConsole
 			string previous;
 			if (tagValues.TryGetValue("previous", out previous))
 			{
-				var hashFileName = SplitOnSpace(previous);
+				var hashFileName = previous.SplitOnSpace();
 				previousCommitId = hashFileName.Item1;
 				previousFileName = hashFileName.Item2;
 			}
@@ -167,22 +167,6 @@ namespace GitBlameConsole
 			}
 
 			throw new UsageException("Can't find msysgit installed on the system.");
-		}
-
-		// Splits the given string on the first space (if any) and returns the two parts.
-		private static Tuple<string, string> SplitOnSpace(string value)
-		{
-			int spaceIndex = value.IndexOf(' ');
-			if (spaceIndex >= 0)
-			{
-				string first = value.Substring(0, spaceIndex);
-				string second = value.Substring(spaceIndex + 1);
-				return Tuple.Create(first, second);
-			}
-			else
-			{
-				return Tuple.Create(value, default(string));
-			}
 		}
 	}
 }
