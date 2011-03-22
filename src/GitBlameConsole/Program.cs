@@ -15,7 +15,7 @@ namespace GitBlameConsole
 			Program program = new Program();
 			try
 			{
-				program.Run();
+				program.Run(args);
 			}
 			catch (UsageException ex)
 			{
@@ -23,10 +23,14 @@ namespace GitBlameConsole
 			}
 		}
 
-		private void Run()
+		private void Run(string[] args)
 		{
-			ExternalProcess git = new ExternalProcess(@"D:\Program Files (x86)\Git\cmd\git.cmd", @"D:\Projects\git");
-			var results = git.Run(new ProcessRunSettings("blame", "--incremental", "cache.h"));
+			if (args.Length == 0 || !File.Exists(args[0]))
+				throw new UsageException(@"Usage: GitBlame path\to\file.dat");
+
+			string filePath = args[0];
+			ExternalProcess git = new ExternalProcess(@"D:\Program Files (x86)\Git\cmd\git.cmd", Path.GetDirectoryName(filePath));
+			var results = git.Run(new ProcessRunSettings("blame", "--incremental", Path.GetFileName(filePath)));
 			if (results.ExitCode != 0)
 				throw new UsageException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
 
