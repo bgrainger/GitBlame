@@ -29,7 +29,7 @@ namespace GitBlameConsole
 				throw new UsageException(@"Usage: GitBlame path\to\file.dat");
 
 			string filePath = args[0];
-			ExternalProcess git = new ExternalProcess(@"D:\Program Files (x86)\Git\cmd\git.cmd", Path.GetDirectoryName(filePath));
+			ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(filePath));
 			var results = git.Run(new ProcessRunSettings("blame", "--incremental", Path.GetFileName(filePath)));
 			if (results.ExitCode != 0)
 				throw new UsageException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
@@ -134,6 +134,24 @@ namespace GitBlameConsole
 		private static string GetEmail(string email)
 		{
 			return (email[0] == '<' && email[email.Length - 1] == '>') ? email.Substring(1, email.Length - 2) : email;
+		}
+
+		private static string GetGitPath()
+		{
+			string[] parentFolders = new[]
+			{
+				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+				@"D:\Program Files (x86)",
+			};
+
+			foreach (string folder in parentFolders)
+			{
+				string gitPath = Path.Combine(folder, @"Git\cmd\git.cmd");
+				if (File.Exists(gitPath))
+					return gitPath;
+			}
+
+			throw new UsageException("Can't find msysgit installed on the system.");
 		}
 
 		// Splits the given string on the first space (if any) and returns the two parts.
