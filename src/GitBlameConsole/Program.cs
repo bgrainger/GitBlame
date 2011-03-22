@@ -119,15 +119,15 @@ namespace GitBlameConsole
 		private static DateTimeOffset ConvertUnixTime(string seconds, string timeZone)
 		{
 			// parse timestamp to base date time
-			DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+			DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified);
 			DateTime dateTime = epoch.AddSeconds(double.Parse(seconds, CultureInfo.InvariantCulture));
 
-			// parse TZ to hours and minutes
+			// parse time zone to hours and minutes
 			int hours = int.Parse(timeZone.Substring(1, 2), CultureInfo.InvariantCulture);
 			int minutes = int.Parse(timeZone.Substring(3, 2), CultureInfo.InvariantCulture);
 			TimeSpan offset = TimeSpan.FromMinutes((hours * 60 + minutes) * (timeZone[0] == '-' ? -1 : 1));
 
-			return new DateTimeOffset(dateTime, offset);
+			return new DateTimeOffset(dateTime + offset, offset);
 		}
 
 		// Extracts the email address from a well-formed "author-mail" or "committer-mail" value.
