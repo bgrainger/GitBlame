@@ -25,6 +25,11 @@ namespace GitBlameConsole
 			get { return m_lineCount; }
 		}
 
+		public Commit Commit
+		{
+			get { return m_commit; }
+		}
+
 		readonly int m_startLine;
 		readonly int m_lineCount;
 		readonly Commit m_commit;
