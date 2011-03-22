@@ -1,0 +1,13 @@
+# ignore output folders
+bin/
+build/
+obj/
+ipch/
+
+# ignore user-specific options/cache files
+_ReSharper.*
+Thumbs.db
+*.csproj.user
+*.[Rr]e[Ss]harper.user
+*.sln.cache
+*.suo
