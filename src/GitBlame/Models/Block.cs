@@ -1,5 +1,5 @@
 ﻿
-namespace GitBlameConsole
+namespace GitBlame.Models
 {
 	/// <summary>
 	/// <see cref="Block"/> represents a continguous section of a file that was added from a specific <see cref="Commit"/>.

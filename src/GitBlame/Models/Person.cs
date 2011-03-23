@@ -1,7 +1,7 @@
 ﻿
 using System.Diagnostics;
 
-namespace GitBlameConsole
+namespace GitBlame.Models
 {
 	/// <summary>
 	/// <see cref="Person"/> represents a single person (author or committer) in the git history.

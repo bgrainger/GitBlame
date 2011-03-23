@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace GitBlameConsole
+namespace GitBlame.Models
 {
 	/// <summary>
 	/// <see cref="Commit"/> represents a specific commit referenced in the git blame output.

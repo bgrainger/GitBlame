@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace GitBlameConsole
+namespace GitBlame.Models
 {
 	/// <summary>
 	/// <see cref="BlameResult"/> is the result of running <c>git blame</c> on a specific revision of a specific file.

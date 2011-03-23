@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GitBlameConsole.Utility
+namespace GitBlame.Utility
 {
 	/// <summary>
 	/// Implements the IComparer{T} interface with a delegate.

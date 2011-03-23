@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace GitBlameConsole
+namespace GitBlame.Utility
 {
 	public sealed class ExternalProcess
 	{

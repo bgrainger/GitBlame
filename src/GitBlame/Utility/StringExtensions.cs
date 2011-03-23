@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace GitBlameConsole.Utility
+namespace GitBlame.Utility
 {
 	public static class StringExtensions
 	{

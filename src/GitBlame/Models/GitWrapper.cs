@@ -4,60 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using GitBlameConsole.Utility;
+using GitBlame.Utility;
 
-namespace GitBlameConsole
+namespace GitBlame.Models
 {
-	class Program
+	internal sealed class GitWrapper
 	{
-		static void Main(string[] args)
-		{
-			Program program = new Program();
-			try
-			{
-				program.Run(args);
-			}
-			catch (UsageException ex)
-			{
-				Console.Error.WriteLine("Error: {0}", ex.Message);
-			}
-		}
-
-		private void Run(string[] args)
-		{
-			// check arguments
-			if (args.Length == 0 || !File.Exists(args[0]))
-				throw new UsageException(@"Usage: GitBlame path\to\file.dat");
-
-			// run "git blame"
-			string filePath = args[0];
-			ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(filePath));
-			var results = git.Run(new ProcessRunSettings("blame", "--incremental", Path.GetFileName(filePath)));
-			if (results.ExitCode != 0)
-				throw new UsageException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
-
-			// parse output
-			BlameResult result = ParseBlameOutput(results.Output);
-
-			// reproduce standard blame output (from the parsed data)
-			string[] lines = File.ReadAllLines(filePath);
-			foreach (Block block in result.Blocks)
-			{
-				for (int lineIndex = 0; lineIndex < block.LineCount; lineIndex++)
-				{
-					Commit commit = block.Commit;
-					int fileLineIndex = block.StartLine + lineIndex;
-					string line = lines[fileLineIndex - 1];
-					string hash = ((commit.PreviousCommitId == null ? "^" : "") + commit.Id).WithLength(8);
-					string author = commit.Author.Name.WithLength(27);
-					string date = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm:ss zz}{1:d2}", commit.AuthorDate, Math.Abs(commit.AuthorDate.Offset.Minutes));
-
-					string output = string.Format(CultureInfo.InvariantCulture, "{0} ({1} {2} {3,4}) {4}", hash, author, date, fileLineIndex, line);
-					Console.WriteLine(output);
-				}
-			}
-		}
-
 		private static BlameResult ParseBlameOutput(string output)
 		{
 			List<Block> blocks = new List<Block>();
@@ -166,7 +118,7 @@ namespace GitBlameConsole
 					return gitPath;
 			}
 
-			throw new UsageException("Can't find msysgit installed on the system.");
+			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
 	}
 }
