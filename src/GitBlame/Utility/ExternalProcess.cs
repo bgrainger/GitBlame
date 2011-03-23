@@ -54,16 +54,16 @@ namespace GitBlame.Utility
 			Process process = new Process
 			{
 				StartInfo =
-					{
-						FileName = m_executablePath,
-						Arguments = settings.Arguments,
-						UseShellExecute = false,
-						RedirectStandardOutput = true,
-						StandardOutputEncoding = Encoding.UTF8,
-						RedirectStandardError = true,
-						WorkingDirectory = m_defaultWorkingDirectory,
-						CreateNoWindow = true,
-					}
+				{
+					FileName = m_executablePath,
+					Arguments = settings.Arguments,
+					UseShellExecute = false,
+					RedirectStandardOutput = true,
+					StandardOutputEncoding = Encoding.UTF8,
+					RedirectStandardError = true,
+					WorkingDirectory = m_defaultWorkingDirectory,
+					CreateNoWindow = true,
+				},
 			};
 
 			if (settings.EnvironmentModifier != null)
