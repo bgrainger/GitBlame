@@ -10,7 +10,20 @@ namespace GitBlame.Models
 {
 	internal sealed class GitWrapper
 	{
-		private static BlameResult ParseBlameOutput(string output)
+		public static BlameResult GetBlameOutput(string filePath)
+		{
+		   // run "git blame"
+			string directory = Path.GetDirectoryName(filePath);
+			ExternalProcess git = new ExternalProcess(GetGitPath(), directory);
+			var results = git.Run(new ProcessRunSettings("blame", "--incremental", Path.GetFileName(filePath)));
+			if (results.ExitCode != 0)
+				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
+
+			// parse output
+			return ParseBlameOutput(directory, results.Output); 
+		}
+
+		private static BlameResult ParseBlameOutput(string directory, string output)
 		{
 			List<Block> blocks = new List<Block>();
 			Dictionary<string, Commit> commits = new Dictionary<string, Commit>();

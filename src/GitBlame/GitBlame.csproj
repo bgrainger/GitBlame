@@ -55,6 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BlameControl.cs" />
     <Compile Include="Models\GitWrapper.cs" />
     <Compile Include="Utility\ExternalProcess.cs" />
     <Compile Include="Utility\GenericComparer.cs" />
