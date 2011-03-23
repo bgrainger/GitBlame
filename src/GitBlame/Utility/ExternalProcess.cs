@@ -62,6 +62,7 @@ namespace GitBlame.Utility
 						StandardOutputEncoding = Encoding.UTF8,
 						RedirectStandardError = true,
 						WorkingDirectory = m_defaultWorkingDirectory,
+						CreateNoWindow = true,
 					}
 			};
 
