@@ -73,20 +73,20 @@ namespace GitBlame
 
 				double height = block.LineCount * lineHeight;
 				Rect rectangle = new Rect(0, yOffset, 200, height);
-				
+
 				// create a colour that depends on the commit ID and its age
 				int alpha = 255 - (int) ((DateTimeOffset.Now - block.Commit.CommitDate).TotalDays / 10.0);
 				int red = int.Parse(block.Commit.Id.Substring(0, 2), NumberStyles.HexNumber);
 				int green = int.Parse(block.Commit.Id.Substring(2, 2), NumberStyles.HexNumber);
 				int blue = int.Parse(block.Commit.Id.Substring(4, 2), NumberStyles.HexNumber);
-				
+
 				drawingContext.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte) alpha, (byte) red, (byte) green, (byte) blue)), new Pen(Brushes.Black, 1), rectangle);
 
 				blockIndex++;
 				yOffset += height;
 				lineCount += block.LineCount;
 			} while (yOffset < RenderSize.Height && lineCount < m_lineCount);
-			
+
 			SetVerticalScrollInfo(null, yOffset / lineHeight, null);
 		}
 
