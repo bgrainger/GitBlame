@@ -4,7 +4,7 @@
     xmlns:src="clr-namespace:GitBlame"
     Title="GitBlame" Height="600" Width="300">
   <Grid>
-    <ScrollViewer>
+    <ScrollViewer CanContentScroll="true">
       <src:BlameControl x:Name="Blame" />
     </ScrollViewer>
   </Grid>

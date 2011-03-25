@@ -33,7 +33,7 @@ namespace GitBlame
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
-			return new Size(availableSize.Width, m_lineCount * 20);
+			return availableSize;
 		}
 
 		protected override void OnScrollChanged()
@@ -88,21 +88,6 @@ namespace GitBlame
 			} while (yOffset < RenderSize.Height && lineCount < m_lineCount);
 
 			SetVerticalScrollInfo(null, yOffset / lineHeight, null);
-		}
-
-		private Size GetViewportSize()
-		{
-			return new Size(GetViewportWidth(), GetViewportHeight());
-		}
-
-		private double GetViewportWidth()
-		{
-			return ((IScrollInfo) this).ViewportWidth;
-		}
-
-		private double GetViewportHeight()
-		{
-			return ((IScrollInfo) this).ViewportHeight;
 		}
 
 		private void RedrawSoon()
