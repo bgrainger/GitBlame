@@ -24,6 +24,7 @@ namespace GitBlame
 		internal void SetBlameResult(BlameResult blame)
 		{
 			m_blame = blame;
+			m_columnWidths = new[] { 200, c_marginWidth, 0 };
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
 			SetVerticalScrollInfo(m_lineCount + 1, null, null);
 
@@ -77,6 +78,10 @@ namespace GitBlame
 			lineCount -= m_blame.Blocks[blockIndex].LineCount;
 			int topBlockOffset = m_topLineIndex - lineCount;
 
+			double blockWidth = m_columnWidths[0];
+			double codeXOffset = m_columnWidths[0] + m_columnWidths[1];
+			double codeWidth = m_columnWidths[2];
+
 			// draw all visible blocks
 			double yOffset = -topBlockOffset * m_lineHeight;
 			int lineIndex = m_topLineIndex;
@@ -85,7 +90,7 @@ namespace GitBlame
 				Block block = m_blame.Blocks[blockIndex];
 
 				double height = block.LineCount * m_lineHeight;
-				Rect rectangle = new Rect(0, yOffset, 200, height);
+				Rect rectangle = new Rect(0, yOffset, blockWidth, height);
 
 				// create a colour that depends on the commit ID and its age
 				int alpha = 255 - (int) ((DateTimeOffset.Now - block.Commit.CommitDate).TotalDays / 10.0);
@@ -96,11 +101,15 @@ namespace GitBlame
 				drawingContext.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte) alpha, (byte) red, (byte) green, (byte) blue)), null, rectangle);
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
 
+				Geometry clipGeometry = new RectangleGeometry(new Rect(codeXOffset, 0, RenderSize.Width - codeXOffset, RenderSize.Height));
+				drawingContext.PushClip(clipGeometry);
 				for (int l = 0; l < block.LineCount; l++)
 				{
 					FormattedText text = CreateFormattedText(m_blame.Lines[block.StartLine + l - 1], typeface);
-					drawingContext.DrawText(text, new Point(210, yOffset + l * m_lineHeight));
+					drawingContext.DrawText(text, new Point(codeXOffset - HorizontalOffset, yOffset + l * m_lineHeight));
+					codeWidth = Math.Max(codeWidth, text.Width + c_marginWidth);
 				}
+				drawingContext.Pop();
 
 				blockIndex++;
 				yOffset += height;
@@ -109,7 +118,8 @@ namespace GitBlame
 
 			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(blockWidth, 0), new Point(blockWidth, Math.Min(yOffset, RenderSize.Height)));
 
-			SetHorizontalScrollInfo(200, RenderSize.Width, null);
+			m_columnWidths[2] = codeWidth;
+			SetHorizontalScrollInfo(m_columnWidths.Sum(), RenderSize.Width, null);
 		}
 
 		private void RedrawSoon()
@@ -132,7 +142,10 @@ namespace GitBlame
 			return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize, Brushes.Black);
 		}
 
+		const double c_marginWidth = 10;
+
 		BlameResult m_blame;
+		double[] m_columnWidths;
 		int m_lineCount;
 		int m_topLineIndex;
 		double m_emSize;
