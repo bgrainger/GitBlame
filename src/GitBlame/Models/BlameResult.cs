@@ -21,6 +21,14 @@ namespace GitBlame.Models
 			get { return m_blocks; }
 		}
 
+		public ReadOnlyCollection<Commit> Commits
+		{
+			get
+			{
+				return new List<Commit>(m_commits.Values).AsReadOnly();
+			}
+		}
+
 		public ReadOnlyCollection<string> Lines
 		{
 			get { return m_lines; }

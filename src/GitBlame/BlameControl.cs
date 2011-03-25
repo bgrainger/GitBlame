@@ -1,10 +1,10 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -19,6 +19,7 @@ namespace GitBlame
 		public BlameControl()
 			: base(12, 1)
 		{
+			m_personBrush = new Dictionary<Person, Brush>();
 		}
 
 		internal void SetBlameResult(BlameResult blame)
@@ -32,6 +33,8 @@ namespace GitBlame
 			DateTimeOffset newestCommit = blame.Commits.Max(c => c.AuthorDate);
 			DateTimeOffset now = DateTimeOffset.Now;
 			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
+
+			CreateBrushesForAuthors();
 		}
 
 		protected override Size ArrangeOverride(Size finalSize)
@@ -93,12 +96,11 @@ namespace GitBlame
 				Rect rectangle = new Rect(0, yOffset, blockWidth, height);
 
 				// create a colour that depends on the commit ID and its age
-				int alpha = 255 - (int) ((DateTimeOffset.Now - block.Commit.CommitDate).TotalDays / 10.0);
-				int red = int.Parse(block.Commit.Id.Substring(0, 2), NumberStyles.HexNumber);
-				int green = int.Parse(block.Commit.Id.Substring(2, 2), NumberStyles.HexNumber);
-				int blue = int.Parse(block.Commit.Id.Substring(4, 2), NumberStyles.HexNumber);
+				double alpha = (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale + 0.1;
 
-				drawingContext.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte) alpha, (byte) red, (byte) green, (byte) blue)), null, rectangle);
+				drawingContext.PushOpacity(alpha);
+				drawingContext.DrawRectangle(m_personBrush[block.Commit.Author], null, rectangle);
+				drawingContext.Pop();
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
 
 				Geometry clipGeometry = new RectangleGeometry(new Rect(codeXOffset, 0, RenderSize.Width - codeXOffset, RenderSize.Height));
@@ -142,6 +144,116 @@ namespace GitBlame
 			return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize, Brushes.Black);
 		}
 
+		private void CreateBrushesForAuthors()
+		{
+			// create brushes by author frequency
+			foreach (Person author in m_blame.Blocks.Select(b => b.Commit).Distinct().GroupBy(c => c.Author).OrderByDescending(g => g.Count()).Select(g => g.Key))
+			{
+				if (!m_personBrush.ContainsKey(author))
+				{
+					Color color = m_colors[m_currentColor];
+					Brush brush;
+					switch (m_currentPattern)
+					{
+					case 0:
+						brush = new SolidColorBrush(color);
+						break;
+
+					default:
+						// TODO: create more pattern brushes
+						brush = CreateLeftDiagonalBrush(color);
+						break;
+					}
+
+					brush.Freeze();
+					m_personBrush.Add(author, brush);
+
+					if (++m_currentColor == m_colors.Length)
+					{
+						m_currentColor = 0;
+						m_currentPattern++;
+					}
+				}
+			}
+		}
+
+		private static Brush CreateLeftDiagonalBrush(Color color)
+		{
+			// TODO: Move to XAML.
+			PathFigure figure1 = new PathFigure
+			{
+				IsClosed = true,
+				StartPoint = new Point(5, 0),
+				Segments =
+				{ 
+					new PolyLineSegment
+					{
+						Points =
+						{
+							new Point(10, 0),
+							new Point(0, 10),
+							new Point(0, 5),
+						},
+					}
+				},
+			};
+
+			PathFigure figure2 = new PathFigure
+			{
+				IsClosed = true,
+				StartPoint = new Point(10, 5),
+				Segments =
+				{
+					new PolyLineSegment
+					{
+						Points =
+						{
+							new Point(10, 10),
+							new Point(5, 10),
+						},
+					},
+				},
+			};
+
+			GeometryDrawing drawing = new GeometryDrawing
+			{
+				Geometry = new PathGeometry
+				{
+					Figures =
+					{
+						figure1,
+						figure2,
+					},
+				},
+				Brush = new SolidColorBrush(color),
+			};
+
+			return new DrawingBrush
+			{
+				Drawing = drawing,
+				TileMode = TileMode.Tile,
+				Viewport = new Rect(0, 0, 10, 10),
+				ViewportUnits = BrushMappingMode.Absolute,
+			};
+		}
+
+		// TODO: Get nice color palette.
+		static readonly Color[] m_colors = new[]
+		{
+			Color.FromRgb(255, 0, 0),
+			Color.FromRgb(255, 127, 0),
+			Color.FromRgb(255, 255, 0),
+			Color.FromRgb(127, 255, 0),
+			Color.FromRgb(0, 255, 0),
+			Color.FromRgb(0, 255, 127),
+			Color.FromRgb(0, 255, 255),
+			Color.FromRgb(0, 127, 255),
+			Color.FromRgb(0, 0, 255),
+			Color.FromRgb(127, 0, 255),
+			Color.FromRgb(255, 0, 255),
+			Color.FromRgb(255, 0, 127),
+		};
+
 		const double c_marginWidth = 10;
 
 		BlameResult m_blame;
@@ -150,5 +262,12 @@ namespace GitBlame
 		int m_topLineIndex;
 		double m_emSize;
 		double m_lineHeight;
+
+		Dictionary<Person, Brush> m_personBrush;
+		int m_currentColor;
+		int m_currentPattern;
+
+		DateTimeOffset m_oldestCommit;
+		double m_dateScale;
 	}
 }
