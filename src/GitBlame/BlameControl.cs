@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
@@ -111,6 +112,18 @@ namespace GitBlame
 				FormattedText dateText = CreateSmallFormattedText(commitDate, typeface, 85);
 				dateText.TextAlignment = TextAlignment.Right;
 				drawingContext.DrawText(dateText, new Point(114, textY));
+
+				int commitLineCount = (int) ((rectangle.Bottom - textY - m_lineHeight) / authorText.Height);
+				if (commitLineCount > 0)
+				{
+					// allow line breaks in "Long.Dotted.Identifiers" by inserting a zero-width space
+					string summary = Regex.Replace(block.Commit.Summary, @"\.([A-Z, ])", ".\u200B$1");
+
+					FormattedText commitText = CreateSmallFormattedText(summary, typeface, 198);
+					commitText.MaxLineCount = commitLineCount;
+					commitText.Trimming = TextTrimming.WordEllipsis;
+					drawingContext.DrawText(commitText, new Point(1, textY + m_lineHeight));
+				}
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
 
