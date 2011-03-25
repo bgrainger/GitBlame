@@ -101,6 +101,17 @@ namespace GitBlame
 				drawingContext.PushOpacity(alpha);
 				drawingContext.DrawRectangle(m_personBrush[block.Commit.Author], null, rectangle);
 				drawingContext.Pop();
+
+				double textY = Math.Max(rectangle.Top, 0) + 1;
+
+				FormattedText authorText = CreateSmallFormattedText(block.Commit.Author.Name, typeface, 110);
+				drawingContext.DrawText(authorText, new Point(1, textY));
+
+				string commitDate = block.Commit.AuthorDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+				FormattedText dateText = CreateSmallFormattedText(commitDate, typeface, 85);
+				dateText.TextAlignment = TextAlignment.Right;
+				drawingContext.DrawText(dateText, new Point(114, textY));
+
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
 
 				Geometry clipGeometry = new RectangleGeometry(new Rect(codeXOffset, 0, RenderSize.Width - codeXOffset, RenderSize.Height));
@@ -142,6 +153,15 @@ namespace GitBlame
 		private FormattedText CreateFormattedText(string text, Typeface typeface)
 		{
 			return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize, Brushes.Black);
+		}
+
+		private FormattedText CreateSmallFormattedText(string text, Typeface typeface, double maxWidth)
+		{
+			FormattedText formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize * 0.75, Brushes.Black);
+			formattedText.MaxTextWidth = maxWidth;
+			formattedText.Trimming = TextTrimming.CharacterEllipsis;
+			formattedText.MaxLineCount = 1;
+			return formattedText;
 		}
 
 		private void CreateBrushesForAuthors()
