@@ -1,9 +1,11 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using GitBlame.Utility;
 
 namespace GitBlame.Models
@@ -20,11 +22,12 @@ namespace GitBlame.Models
 				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
 
 			// parse output
-			return ParseBlameOutput(directory, results.Output); 
+			return ParseBlameOutput(filePath, results.Output); 
 		}
 
-		private static BlameResult ParseBlameOutput(string directory, string output)
+		private static BlameResult ParseBlameOutput(string filePath, string output)
 		{
+			string directory = Path.GetDirectoryName(filePath);
 			List<Block> blocks = new List<Block>();
 			Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
 
@@ -68,7 +71,10 @@ namespace GitBlame.Models
 				}
 			}
 
-			return new BlameResult(blocks.AsReadOnly(), commits);
+			// TODO: Get contents of specific revision being blamed, not the current file on disk
+			var lines = File.ReadAllLines(filePath).Select(l => l.Replace("\t", "	")).ToList().AsReadOnly();
+
+			return new BlameResult(blocks.AsReadOnly(), lines, commits);
 		}
 
 		// Reads known values from 'tagValues' to create a Commit object.
