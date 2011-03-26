@@ -20,6 +20,9 @@ namespace GitBlame
 		public BlameControl()
 			: base(12, 1)
 		{
+			m_visual = new DrawingVisual();
+			AddVisualChild(m_visual);
+
 			m_personBrush = new Dictionary<Person, Brush>();
 		}
 
@@ -41,6 +44,7 @@ namespace GitBlame
 		protected override Size ArrangeOverride(Size finalSize)
 		{
 			SetVerticalScrollInfo(null, finalSize.Height / m_lineHeight, null);
+			RedrawSoon();
 			return finalSize;
 		}
 
@@ -55,17 +59,36 @@ namespace GitBlame
 			return availableSize;
 		}
 
+		protected override Visual GetVisualChild(int index)
+		{
+			if (index != 0)
+				throw new ArgumentOutOfRangeException("index");
+
+			return m_visual;
+		}
+
+		protected override int VisualChildrenCount
+		{
+			get { return 1; }
+		}
+
 		protected override void OnScrollChanged()
 		{
 			m_topLineIndex = (int) VerticalOffset;
-			RedrawSoon();
+			Render();
 		}
 
-		protected override void OnRender(DrawingContext drawingContext)
+		private void Render()
 		{
 			if (m_blame == null)
 				return;
 
+			using (DrawingContext drawingContext = m_visual.RenderOpen())
+				Render(drawingContext);
+		}
+
+		private void Render(DrawingContext drawingContext)
+		{
 			Typeface typeface = TextElementUtility.GetTypeface(this);
 
 			// calculate first block that is displayed
@@ -155,12 +178,7 @@ namespace GitBlame
 
 		private void RedrawSoon(DispatcherPriority priority)
 		{
-			Dispatcher.BeginInvoke(priority, new SendOrPostCallback(delegate { Redraw(); }), null);
-		}
-
-		private void Redraw()
-		{
-			InvalidateVisual();
+			Dispatcher.BeginInvoke(priority, new SendOrPostCallback(delegate { Render(); }), null);
 		}
 
 		private FormattedText CreateFormattedText(string text, Typeface typeface)
@@ -289,6 +307,7 @@ namespace GitBlame
 
 		const double c_marginWidth = 10;
 
+		readonly DrawingVisual m_visual;
 		BlameResult m_blame;
 		double[] m_columnWidths;
 		int m_lineCount;
