@@ -29,9 +29,8 @@ namespace GitBlame
 		internal void SetBlameResult(BlameResult blame)
 		{
 			m_blame = blame;
-			m_columnWidths = new[] { 200, c_marginWidth, 0 };
+			m_columnWidths = new[] { 200, c_marginWidth, m_minimumLineNumberWidth, c_marginWidth, 0 };
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
-			SetVerticalScrollInfo(m_lineCount + 1, null, null);
 
 			m_oldestCommit = blame.Commits.Min(c => c.AuthorDate);
 			DateTimeOffset newestCommit = blame.Commits.Max(c => c.AuthorDate);
@@ -39,6 +38,8 @@ namespace GitBlame
 			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
 
 			CreateBrushesForAuthors();
+
+			SetVerticalScrollInfo(m_lineCount + 1, null, 0);
 			RedrawSoon();
 		}
 
@@ -54,8 +55,10 @@ namespace GitBlame
 			Typeface typeface = TextElementUtility.GetTypeface(this);
 			m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
 
-			FormattedText text = CreateFormattedText("using System;", typeface);
+			FormattedText text = CreateFormattedText("8888", typeface);
 			m_lineHeight = text.Height;
+			m_minimumLineNumberWidth = Math.Max(m_columnWidths[2], text.Width);
+			m_columnWidths[2] = m_minimumLineNumberWidth;
 
 			return availableSize;
 		}
@@ -107,8 +110,10 @@ namespace GitBlame
 			int topBlockOffset = m_topLineIndex - lineCount;
 
 			double blockWidth = m_columnWidths[0];
-			double codeXOffset = m_columnWidths[0] + m_columnWidths[1];
-			double codeWidth = m_columnWidths[2];
+			double lineNumberXOffset = m_columnWidths.Take(2).Sum();
+			double lineNumberWidth = m_columnWidths[2];
+			double codeXOffset = m_columnWidths.Take(4).Sum();
+			double codeWidth = m_columnWidths[4];
 
 			// draw all visible blocks
 			double yOffset = -topBlockOffset * m_lineHeight;
@@ -151,6 +156,16 @@ namespace GitBlame
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
 
+				for (int l = 0; l < block.LineCount; l++)
+				{
+					FormattedText lineNumberText = CreateFormattedText((block.StartLine + l).ToString(CultureInfo.InvariantCulture), typeface);
+					lineNumberText.TextAlignment = TextAlignment.Right;
+					lineNumberText.SetForegroundBrush(Brushes.DarkCyan);
+					lineNumberWidth = Math.Max(lineNumberWidth, lineNumberText.Width);
+					lineNumberText.MaxTextWidth = lineNumberWidth;
+					drawingContext.DrawText(lineNumberText, new Point(lineNumberXOffset, yOffset + l * m_lineHeight));
+				}
+
 				Geometry clipGeometry = new RectangleGeometry(new Rect(codeXOffset, 0, RenderSize.Width - codeXOffset, RenderSize.Height));
 				drawingContext.PushClip(clipGeometry);
 				for (int l = 0; l < block.LineCount; l++)
@@ -167,8 +182,12 @@ namespace GitBlame
 			} while (yOffset < RenderSize.Height && lineCount < m_lineCount);
 
 			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(blockWidth, 0), new Point(blockWidth, Math.Min(yOffset, RenderSize.Height)));
+			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(codeXOffset - c_marginWidth / 2.0, 0), new Point(codeXOffset - c_marginWidth / 2.0, Math.Min(yOffset, RenderSize.Height)));
 
-			m_columnWidths[2] = codeWidth;
+			if (m_columnWidths[2] != lineNumberWidth || m_columnWidths[4] != codeWidth)
+				RedrawSoon();
+			m_columnWidths[2] = lineNumberWidth;
+			m_columnWidths[4] = codeWidth;
 			SetHorizontalScrollInfo(m_columnWidths.Sum(), RenderSize.Width, null);
 		}
 
@@ -311,6 +330,7 @@ namespace GitBlame
 		readonly DrawingVisual m_visual;
 		BlameResult m_blame;
 		double[] m_columnWidths;
+		double m_minimumLineNumberWidth;
 		int m_lineCount;
 		int m_topLineIndex;
 		double m_emSize;
