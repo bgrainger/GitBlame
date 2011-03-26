@@ -9,7 +9,7 @@ namespace GitBlame
 	/// </summary>
 	public partial class App : Application
 	{
-		public string FilePath { get; private set; }
+		public string FilePath { get; set; }
 
 		protected override void OnStartup(StartupEventArgs e)
 		{

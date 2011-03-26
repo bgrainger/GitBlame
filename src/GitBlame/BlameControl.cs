@@ -39,6 +39,7 @@ namespace GitBlame
 			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
 
 			CreateBrushesForAuthors();
+			RedrawSoon();
 		}
 
 		protected override Size ArrangeOverride(Size finalSize)
