@@ -17,9 +17,12 @@ namespace GitBlame
 
 		private void RunBlame()
 		{
-			string filePath = @"D:\Projects\git\cache.h";
-			BlameResult blame = GitWrapper.GetBlameOutput(filePath);
-			Blame.SetBlameResult(blame);
+			string filePath = ((App) Application.Current).FilePath;
+			if (filePath != null)
+			{
+				BlameResult blame = GitWrapper.GetBlameOutput(filePath);
+				Blame.SetBlameResult(blame);
+			}
 		}
 	}
 }
