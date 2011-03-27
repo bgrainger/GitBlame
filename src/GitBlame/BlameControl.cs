@@ -24,6 +24,10 @@ namespace GitBlame
 			AddVisualChild(m_visual);
 
 			m_personBrush = new Dictionary<Person, Brush>();
+			m_newLineBrush = new SolidColorBrush(Color.FromRgb(108, 226, 108));
+			m_newLineBrush.Freeze();
+			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
+			m_changedTextBrush.Freeze();
 		}
 
 		internal void SetBlameResult(BlameResult blame)
@@ -170,9 +174,30 @@ namespace GitBlame
 				drawingContext.PushClip(clipGeometry);
 				for (int l = 0; l < block.LineCount; l++)
 				{
-					FormattedText text = CreateFormattedText(m_blame.Lines[block.StartLine + l - 1], typeface);
-					drawingContext.DrawText(text, new Point(codeXOffset - HorizontalOffset, yOffset + l * m_lineHeight));
-					codeWidth = Math.Max(codeWidth, text.Width + c_marginWidth);
+					Line line = m_blame.Lines[block.StartLine + l - 1];
+
+					double xOffset = codeXOffset - HorizontalOffset;
+					double lineYOffset = yOffset + l * m_lineHeight;
+
+					if (line.IsNew)
+					{
+						drawingContext.Pop();
+						drawingContext.DrawRectangle(m_newLineBrush, null, new Rect(codeXOffset - 5, lineYOffset, 5, m_lineHeight));
+						drawingContext.PushClip(clipGeometry);
+					}
+
+					foreach (LinePart part in line.Parts)
+					{
+						FormattedText text = CreateFormattedText(string.Join("", part.Text), typeface);
+
+						if (!line.IsNew && part.Status == LinePartStatus.New)
+							drawingContext.DrawRectangle(m_changedTextBrush, null, new Rect(xOffset, lineYOffset, text.WidthIncludingTrailingWhitespace, m_lineHeight));
+
+						drawingContext.DrawText(text, new Point(xOffset, lineYOffset));
+						xOffset += text.WidthIncludingTrailingWhitespace;
+					}
+
+					codeWidth = Math.Max(codeWidth, xOffset - codeXOffset + HorizontalOffset);
 				}
 				drawingContext.Pop();
 
@@ -328,6 +353,9 @@ namespace GitBlame
 		const double c_marginWidth = 10;
 
 		readonly DrawingVisual m_visual;
+		readonly Brush m_newLineBrush;
+		readonly Brush m_changedTextBrush;
+
 		BlameResult m_blame;
 		double[] m_columnWidths;
 		double m_minimumLineNumberWidth;

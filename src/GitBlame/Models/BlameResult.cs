@@ -9,7 +9,7 @@ namespace GitBlame.Models
 	/// </summary>
 	internal sealed class BlameResult
 	{
-		public BlameResult(ReadOnlyCollection<Block> blocks, ReadOnlyCollection<string> lines, Dictionary<string, Commit> commits)
+		public BlameResult(ReadOnlyCollection<Block> blocks, ReadOnlyCollection<Line> lines, Dictionary<string, Commit> commits)
 		{
 			m_blocks = blocks;
 			m_lines = lines;
@@ -29,13 +29,13 @@ namespace GitBlame.Models
 			}
 		}
 
-		public ReadOnlyCollection<string> Lines
+		public ReadOnlyCollection<Line> Lines
 		{
 			get { return m_lines; }
 		}
 
 		readonly ReadOnlyCollection<Block> m_blocks;
-		readonly ReadOnlyCollection<string> m_lines;
+		readonly ReadOnlyCollection<Line> m_lines;
 		readonly Dictionary<string, Commit> m_commits;
 	}
 }

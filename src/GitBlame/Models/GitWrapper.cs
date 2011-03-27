@@ -1,11 +1,11 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using GitBlame.Utility;
 
 namespace GitBlame.Models
@@ -16,21 +16,85 @@ namespace GitBlame.Models
 		{
 		   // run "git blame"
 			string directory = Path.GetDirectoryName(filePath);
+			string fileName = Path.GetFileName(filePath);
 			ExternalProcess git = new ExternalProcess(GetGitPath(), directory);
 			var results = git.Run(new ProcessRunSettings("blame", "--incremental", "--encoding=utf-8", fileName));
 			if (results.ExitCode != 0)
 				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
 
 			// parse output
-			return ParseBlameOutput(filePath, results.Output); 
-		}
-
-		private static BlameResult ParseBlameOutput(string filePath, string output)
-		{
-			string directory = Path.GetDirectoryName(filePath);
 			List<Block> blocks = new List<Block>();
 			Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
+			ParseBlameOutput(results.Output, directory, blocks, commits);
 
+			// allocate a (1-based) array for all lines in the file
+			int lineCount = blocks.Sum(b => b.LineCount);
+			Line[] lines = new Line[lineCount + 1];
+			string[] currentLines = File.ReadAllLines(filePath);
+
+			// process the blocks for each unique commit
+			foreach (var group in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
+			{
+				// check if this commit modifies a previous one
+				Commit commit = group.Key;
+				string commitId = commit.Id;
+				string previousCommitId = commit.PreviousCommitId;
+
+				if (previousCommitId != null)
+				{
+					// get the differences between this commit and the previous one
+					// TODO: Use --word-diff-regex to be smarter about word-breaking
+					results = git.Run(new ProcessRunSettings("diff", "-U0", "--word-diff=porcelain", previousCommitId + ".." + commitId, "--", fileName));
+					if (results.ExitCode != 0)
+						throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
+
+					// process all the lines in the diff output, matching them to blocks
+					using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(results.Output).GetEnumerator())
+					{
+						// move to first line (which is expected to always be present)
+						Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
+						Line line = lineEnumerator.Current;
+
+						// process all the blocks, finding the corresponding lines from the diff for each one
+						foreach (Block block in group)
+						{
+							// skip all lines that occurred before the start of this block
+							while (line.LineNumber < block.OriginalStartLine)
+							{
+								Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
+								line = lineEnumerator.Current;
+							}
+
+							// process all lines in the current block
+							while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+							{
+								// assign this line to the correct index in the blamed version of the file
+								Invariant.Assert(lines[line.LineNumber - block.OriginalStartLine + block.StartLine] == null, "Current line has already been created.");
+								lines[line.LineNumber - block.OriginalStartLine + block.StartLine] = line;
+
+								// move to the next line (if available)
+								if (lineEnumerator.MoveNext())
+									line = lineEnumerator.Current;
+								else
+									break;
+							}
+						}
+					}
+				}
+				else
+				{
+					// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
+					foreach (Block block in group)
+						for (int lineIndex = block.StartLine; lineIndex < block.StartLine + block.LineCount; lineIndex++)
+							lines[lineIndex] = new Line(lineIndex, new List<LinePart> { new LinePart(currentLines[lineIndex - 1], LinePartStatus.New) }.AsReadOnly());
+				}
+			}
+
+			return new BlameResult(blocks.AsReadOnly(), lines.Skip(1).ToList().AsReadOnly(), commits);
+		}
+
+		private static void ParseBlameOutput(string output, string directory, List<Block> blocks, Dictionary<string, Commit> commits)
+		{
 			// read entire output of "git blame"
 			using (StringReader reader = new StringReader(output))
 			{
@@ -70,11 +134,58 @@ namespace GitBlame.Models
 						blocks.Insert(~index, block);
 				}
 			}
+		}
 
-			// TODO: Get contents of specific revision being blamed, not the current file on disk
-			var lines = File.ReadAllLines(filePath).Select(l => l.Replace("\t", "	")).ToList().AsReadOnly();
+		private static IEnumerable<Line> ParseDiffOutput(string output)
+		{
+			using (StringReader reader = new StringReader(output))
+			{
+				// ignore header
+				reader.ReadLine();
+				reader.ReadLine();
+				reader.ReadLine();
+				reader.ReadLine();
 
-			return new BlameResult(blocks.AsReadOnly(), lines, commits);
+				string diffLine = reader.ReadLine();
+				while (diffLine != null)
+				{
+					Match match = Regex.Match(diffLine, @"^@@ -([\d]+)(?:,(\d+))? \+([\d]+)(?:,(\d+))? @@");
+					int startingNewLine = int.Parse(match.Groups[3].Value);
+					int expectedNewLineCount = match.Groups[4].Success ? int.Parse(match.Groups[4].Value) : 1;
+
+					List<LinePart> parts = new List<LinePart>();
+					int newLineCount = 0;
+
+					// read one logical line (split across multiple physical lines) at a time
+					bool lastLineWasDeleted = false;
+					while ((diffLine = reader.ReadLine()) != null)
+					{
+						char marker = diffLine[0];
+
+						// check for end-of-line indicator
+						if (marker == '~' && !lastLineWasDeleted)
+						{
+							yield return new Line(startingNewLine + newLineCount, parts.AsReadOnly());
+							parts = new List<LinePart>();
+							newLineCount++;
+						}
+						else if (marker == '@')
+						{
+							Invariant.Assert(newLineCount == expectedNewLineCount, "Didn't read expected number of diff lines.");
+							break;
+						}
+						else if (marker == ' ' || marker == '+')
+						{
+							lastLineWasDeleted = false;
+							parts.Add(new LinePart(diffLine.Substring(1), marker == ' ' ? LinePartStatus.Existing : LinePartStatus.New));
+						}
+						else if (marker == '-')
+						{
+							lastLineWasDeleted = true;
+						}
+					}
+				}
+			}
 		}
 
 		// Reads known values from 'tagValues' to create a Commit object.

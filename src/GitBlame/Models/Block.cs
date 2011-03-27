@@ -20,6 +20,11 @@ namespace GitBlame.Models
 			get { return m_startLine; }
 		}
 
+		public int OriginalStartLine
+		{
+			get { return m_originalStartLine; }
+		}
+
 		public int LineCount
 		{
 			get { return m_lineCount; }

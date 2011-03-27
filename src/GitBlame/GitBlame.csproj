@@ -59,6 +59,9 @@
     </ApplicationDefinition>
     <Compile Include="BlameControl.cs" />
     <Compile Include="Models\GitWrapper.cs" />
+    <Compile Include="Models\Line.cs" />
+    <Compile Include="Models\LinePart.cs" />
+    <Compile Include="Models\LinePartStatus.cs" />
     <Compile Include="Utility\Invariant.cs" />
     <Compile Include="Utility\ExternalProcess.cs" />
     <Compile Include="Utility\GenericComparer.cs" />
