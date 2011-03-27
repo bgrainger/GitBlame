@@ -34,12 +34,6 @@ namespace GitBlame.Models
 				string line;
 				while ((line = reader.ReadLine()) != null)
 				{
-					// TODO: Determine why launching git blame from a WPF application now includes echo'ed commands in the output; for now, ignore
-					if (line.Length == 0)
-						continue;
-					if (line.StartsWith(directory + ">", StringComparison.OrdinalIgnoreCase))
-						continue;
-
 					// read beginning line in block, with format "hash origLine startLine lineCount"
 					string[] components = line.Split(' ');
 					string commitId = components[0];
