@@ -17,7 +17,7 @@ namespace GitBlame.Models
 		   // run "git blame"
 			string directory = Path.GetDirectoryName(filePath);
 			ExternalProcess git = new ExternalProcess(GetGitPath(), directory);
-			var results = git.Run(new ProcessRunSettings("blame", "--incremental", Path.GetFileName(filePath)));
+			var results = git.Run(new ProcessRunSettings("blame", "--incremental", "--encoding=utf-8", fileName));
 			if (results.ExitCode != 0)
 				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
 
