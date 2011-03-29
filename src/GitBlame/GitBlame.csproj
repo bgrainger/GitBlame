@@ -59,6 +59,7 @@
     </ApplicationDefinition>
     <Compile Include="BlameControl.cs" />
     <Compile Include="Models\GitWrapper.cs" />
+    <Compile Include="Utility\Invariant.cs" />
     <Compile Include="Utility\ExternalProcess.cs" />
     <Compile Include="Utility\GenericComparer.cs" />
     <Compile Include="Utility\ScrollableControl.cs" />
