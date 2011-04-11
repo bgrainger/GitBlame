@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using GitBlame.Layout;
@@ -76,6 +77,27 @@ namespace GitBlame
 			get { return 1; }
 		}
 
+		protected override void OnMouseMove(MouseEventArgs e)
+		{
+			if (m_layout != null)
+			{
+				string lastHoverCommitId = m_hoverCommitId;
+				m_hoverCommitId = null;
+
+				foreach (DisplayBlock block in m_layout.Blocks)
+				{
+					if (block.CommitPosition.Contains(e.GetPosition(this)))
+					{
+						m_hoverCommitId = block.CommitId;
+						break;
+					}
+				}
+
+				if (m_hoverCommitId != lastHoverCommitId)
+					RedrawSoon();
+			}
+		}
+
 		protected override void OnScrollChanged()
 		{
 			m_layout = m_layout.WithTopLineNumber((int) VerticalOffset + 1);
@@ -105,7 +127,7 @@ namespace GitBlame
 
 				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, block.AuthorPosition);
 				drawingContext.PushOpacity(block.Alpha);
-				drawingContext.DrawRectangle(Brushes.DarkGray, null, blockRectangle);
+				drawingContext.DrawRectangle(block.CommitId == m_hoverCommitId ? Brushes.Gold : Brushes.DarkGray, null, blockRectangle);
 				drawingContext.Pop();
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, blockRectangle.Bottom + 0.5), new Point(RenderSize.Width, blockRectangle.Bottom + 0.5));
@@ -314,5 +336,6 @@ namespace GitBlame
 		BlameLayout m_layout;
 		int m_lineCount;
 		double m_emSize;
+		string m_hoverCommitId;
 	}
 }

@@ -306,6 +306,11 @@ namespace GitBlame.Layout
 			m_commit = commit;
 		}
 
+		public string CommitId
+		{
+			get { return m_commit.Id; }
+		}
+
 		public Rect AuthorPosition
 		{
 			get { return m_authorPosition; }
