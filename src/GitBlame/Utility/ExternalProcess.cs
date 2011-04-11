@@ -58,6 +58,7 @@ namespace GitBlame.Utility
 					FileName = m_executablePath,
 					Arguments = settings.Arguments,
 					UseShellExecute = false,
+					RedirectStandardInput = true,
 					RedirectStandardOutput = true,
 					StandardOutputEncoding = Encoding.UTF8,
 					RedirectStandardError = true,
