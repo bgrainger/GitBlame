@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.IO;
 using System.Windows;
 
@@ -13,6 +14,8 @@ namespace GitBlame
 
 		protected override void OnStartup(StartupEventArgs e)
 		{
+			AppDomain.CurrentDomain.UnhandledException += (s, ea) => MessageBox.Show(ea.ExceptionObject.ToString());
+
 			string filePath = e.Args.Length == 1 ? e.Args[0] : null;
 			if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
 			{
