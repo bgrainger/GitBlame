@@ -66,6 +66,7 @@
     <Compile Include="Utility\EnumerableExtensions.cs" />
     <Compile Include="Utility\ExternalProcess.cs" />
     <Compile Include="Utility\GenericComparer.cs" />
+    <Compile Include="Utility\ListExtensions.cs" />
     <Compile Include="Utility\ScrollableControl.cs" />
     <Compile Include="Utility\StringExtensions.cs" />
     <Compile Include="Utility\TextElementUtility.cs" />
