@@ -3,15 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
+using GitBlame.Layout;
 using GitBlame.Models;
 using GitBlame.Utility;
-using Block = GitBlame.Models.Block;
 
 namespace GitBlame
 {
@@ -23,7 +22,7 @@ namespace GitBlame
 			m_visual = new DrawingVisual();
 			AddVisualChild(m_visual);
 
-			m_personBrush = new Dictionary<Person, Brush>();
+			m_personBrush = new Dictionary<int, Brush>();
 			m_newLineBrush = new SolidColorBrush(Color.FromRgb(108, 226, 108));
 			m_newLineBrush.Freeze();
 			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
@@ -32,16 +31,14 @@ namespace GitBlame
 
 		internal void SetBlameResult(BlameResult blame)
 		{
+			double oldLineHeight = m_layout == null ? 1.0 : m_layout.LineHeight;
+
 			m_blame = blame;
-			m_columnWidths = new[] { 200, c_marginWidth, m_minimumLineNumberWidth, c_marginWidth, 0 };
+			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
 
-			m_oldestCommit = blame.Commits.Min(c => c.AuthorDate);
-			DateTimeOffset newestCommit = blame.Commits.Max(c => c.AuthorDate);
-			DateTimeOffset now = DateTimeOffset.Now;
-			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
-
-			CreateBrushesForAuthors();
+			m_personBrush.Clear();
+			CreateBrushesForAuthors(m_layout.AuthorCount);
 
 			SetVerticalScrollInfo(m_lineCount + 1, null, 0);
 			RedrawSoon();
@@ -49,7 +46,8 @@ namespace GitBlame
 
 		protected override Size ArrangeOverride(Size finalSize)
 		{
-			SetVerticalScrollInfo(null, finalSize.Height / m_lineHeight, null);
+			m_layout = m_layout.WithRenderSize(finalSize);
+			SetVerticalScrollInfo(null, finalSize.Height / m_layout.LineHeight, null);
 			RedrawSoon();
 			return finalSize;
 		}
@@ -60,9 +58,7 @@ namespace GitBlame
 			m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
 
 			FormattedText text = CreateFormattedText("8888", typeface);
-			m_lineHeight = text.Height;
-			m_minimumLineNumberWidth = Math.Max(m_columnWidths[2], text.Width);
-			m_columnWidths[2] = m_minimumLineNumberWidth;
+			m_layout = m_layout.WithLineHeight(text.Height);
 
 			return availableSize;
 		}
@@ -82,7 +78,7 @@ namespace GitBlame
 
 		protected override void OnScrollChanged()
 		{
-			m_topLineIndex = (int) VerticalOffset;
+			m_layout = m_layout.WithTopLineNumber((int) VerticalOffset + 1);
 			Render();
 		}
 
@@ -98,130 +94,96 @@ namespace GitBlame
 		private void Render(DrawingContext drawingContext)
 		{
 			Typeface typeface = TextElementUtility.GetTypeface(this);
+			BlameLayout layout = m_layout.WithRenderSize(RenderSize);
 
-			// calculate first block that is displayed
-			int lineCount = 0;
-			int blockIndex = 0;
-			for (; blockIndex < m_blame.Blocks.Count; blockIndex++)
+			foreach (Rect newLineRectangle in layout.NewLines)
+				drawingContext.DrawRectangle(m_newLineBrush, null, newLineRectangle);
+
+			foreach (DisplayBlock block in layout.Blocks)
 			{
-				lineCount += m_blame.Blocks[blockIndex].LineCount;
-				if (lineCount > m_topLineIndex)
-					break;
+				Rect blockRectangle = block.Position;
+
+				drawingContext.PushOpacity(block.Alpha);
+				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, blockRectangle);
+				drawingContext.Pop();
+
+				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, blockRectangle.Bottom + 0.5), new Point(RenderSize.Width, blockRectangle.Bottom + 0.5));
+
+				FormattedText authorText = CreateSmallFormattedText(block.AuthorName, typeface, block.AuthorWidth);
+				drawingContext.DrawText(authorText, new Point(block.AuthorX, block.TextY));
+
+				FormattedText dateText = CreateSmallFormattedText(block.Date, typeface, block.DateWidth);
+				dateText.TextAlignment = TextAlignment.Right;
+				drawingContext.DrawText(dateText, new Point(block.DateX, block.TextY));
+
+				if (block.ShowsSummary)
+				{
+					Rect summaryPosition = block.SummaryPosition;
+					FormattedText commitText = CreateSmallFormattedText(block.Summary, typeface, summaryPosition.Width);
+					commitText.MaxLineCount = Math.Max(1, (int) (summaryPosition.Height / commitText.Height));
+					commitText.Trimming = TextTrimming.WordEllipsis;
+					drawingContext.DrawText(commitText, summaryPosition.TopLeft);
+				}
 			}
 
-			// calculate offset into first block being displayed
-			lineCount -= m_blame.Blocks[blockIndex].LineCount;
-			int topBlockOffset = m_topLineIndex - lineCount;
-
-			double blockWidth = m_columnWidths[0];
-			double lineNumberXOffset = m_columnWidths.Take(2).Sum();
-			double lineNumberWidth = m_columnWidths[2];
-			double codeXOffset = m_columnWidths.Take(4).Sum();
-			double codeWidth = m_columnWidths[4];
-
-			// draw all visible blocks
-			double yOffset = -topBlockOffset * m_lineHeight;
-			int lineIndex = m_topLineIndex;
-			do
+			Column lineNumberColumn = layout.LineNumberColumn;
+			double yOffset = 0;
+			double lineNumberWidth = lineNumberColumn.Width;
+			foreach (DisplayLine line in layout.Lines)
 			{
-				Block block = m_blame.Blocks[blockIndex];
+				FormattedText lineNumberText = CreateFormattedText(line.LineNumber.ToString(CultureInfo.InvariantCulture), typeface);
+				lineNumberText.TextAlignment = TextAlignment.Right;
+				lineNumberText.SetForegroundBrush(Brushes.DarkCyan);
+				lineNumberWidth = Math.Max(lineNumberWidth, lineNumberText.Width);
+				lineNumberText.MaxTextWidth = lineNumberWidth;
+				drawingContext.DrawText(lineNumberText, new Point(lineNumberColumn.Left, yOffset));
 
-				double height = block.LineCount * m_lineHeight;
-				Rect rectangle = new Rect(0, yOffset, blockWidth, height);
+				yOffset += layout.LineHeight;
+			}
+			layout = layout.WithLineNumberWidth(lineNumberWidth);
 
-				// create a colour that depends on the commit ID and its age
-				double alpha = (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale + 0.1;
+			Column codeColumn = layout.CodeColumn;
+			Geometry clipGeometry = new RectangleGeometry(new Rect(codeColumn.Left, 0, RenderSize.Width - codeColumn.Left, RenderSize.Height));
+			drawingContext.PushClip(clipGeometry);
 
-				drawingContext.PushOpacity(alpha);
-				drawingContext.DrawRectangle(m_personBrush[block.Commit.Author], null, rectangle);
-				drawingContext.Pop();
-
-				double textY = Math.Max(rectangle.Top, 0) + 1;
-
-				FormattedText authorText = CreateSmallFormattedText(block.Commit.Author.Name, typeface, 110);
-				drawingContext.DrawText(authorText, new Point(1, textY));
-
-				string commitDate = block.Commit.AuthorDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-				FormattedText dateText = CreateSmallFormattedText(commitDate, typeface, 85);
-				dateText.TextAlignment = TextAlignment.Right;
-				drawingContext.DrawText(dateText, new Point(114, textY));
-
-				int commitLineCount = (int) ((rectangle.Bottom - textY - m_lineHeight) / authorText.Height);
-				if (commitLineCount > 0)
+			yOffset = 0;
+			foreach (DisplayLine line in layout.Lines)
+			{
+				double xOffset = layout.CodeColumn.Left - HorizontalOffset;
+				foreach (LinePart part in line.Parts)
 				{
-					// allow line breaks in "Long.Dotted.Identifiers" by inserting a zero-width space
-					string summary = Regex.Replace(block.Commit.Summary, @"\.([A-Z, ])", ".\u200B$1");
+					FormattedText text = CreateFormattedText(string.Join("", part.Text), typeface);
 
-					FormattedText commitText = CreateSmallFormattedText(summary, typeface, 198);
-					commitText.MaxLineCount = commitLineCount;
-					commitText.Trimming = TextTrimming.WordEllipsis;
-					drawingContext.DrawText(commitText, new Point(1, textY + m_lineHeight));
+					if (!line.IsNew && part.Status == LinePartStatus.New)
+						drawingContext.DrawRectangle(m_changedTextBrush, null, new Rect(xOffset, yOffset, text.WidthIncludingTrailingWhitespace, layout.LineHeight));
+
+					drawingContext.DrawText(text, new Point(xOffset, yOffset));
+					xOffset += text.WidthIncludingTrailingWhitespace;
 				}
 
-				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, rectangle.Bottom + 0.5), new Point(RenderSize.Width, rectangle.Bottom + 0.5));
+				layout = layout.WithCodeWidth(xOffset - codeColumn.Left + HorizontalOffset);
 
-				for (int l = 0; l < block.LineCount; l++)
-				{
-					FormattedText lineNumberText = CreateFormattedText((block.StartLine + l).ToString(CultureInfo.InvariantCulture), typeface);
-					lineNumberText.TextAlignment = TextAlignment.Right;
-					lineNumberText.SetForegroundBrush(Brushes.DarkCyan);
-					lineNumberWidth = Math.Max(lineNumberWidth, lineNumberText.Width);
-					lineNumberText.MaxTextWidth = lineNumberWidth;
-					drawingContext.DrawText(lineNumberText, new Point(lineNumberXOffset, yOffset + l * m_lineHeight));
-				}
+				yOffset += layout.LineHeight;
+			}
 
-				Geometry clipGeometry = new RectangleGeometry(new Rect(codeXOffset, 0, RenderSize.Width - codeXOffset, RenderSize.Height));
-				drawingContext.PushClip(clipGeometry);
-				for (int l = 0; l < block.LineCount; l++)
-				{
-					Line line = m_blame.Lines[block.StartLine + l - 1];
+			drawingContext.Pop();
 
-					double xOffset = codeXOffset - HorizontalOffset;
-					double lineYOffset = yOffset + l * m_lineHeight;
+			double commitRightX = layout.CommitColumn.Right;
+			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(commitRightX, 0), new Point(commitRightX, Math.Min(yOffset, RenderSize.Height)));
 
-					if (line.IsNew)
-					{
-						drawingContext.Pop();
-						drawingContext.DrawRectangle(m_newLineBrush, null, new Rect(codeXOffset - 5, lineYOffset, 5, m_lineHeight));
-						drawingContext.PushClip(clipGeometry);
-					}
+			double lineNumberRightX = layout.CodeMarginColumn.Right;
+			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(lineNumberRightX, 0), new Point(lineNumberRightX, Math.Min(yOffset, RenderSize.Height)));
 
-					foreach (LinePart part in line.Parts)
-					{
-						FormattedText text = CreateFormattedText(string.Join("", part.Text), typeface);
+			SetHorizontalScrollInfo(layout.Width, RenderSize.Width, null);
 
-						if (!line.IsNew && part.Status == LinePartStatus.New)
-							drawingContext.DrawRectangle(m_changedTextBrush, null, new Rect(xOffset, lineYOffset, text.WidthIncludingTrailingWhitespace, m_lineHeight));
-
-						drawingContext.DrawText(text, new Point(xOffset, lineYOffset));
-						xOffset += text.WidthIncludingTrailingWhitespace;
-					}
-
-					codeWidth = Math.Max(codeWidth, xOffset - codeXOffset + HorizontalOffset);
-				}
-				drawingContext.Pop();
-
-				blockIndex++;
-				yOffset += height;
-				lineCount += block.LineCount;
-			} while (yOffset < RenderSize.Height && lineCount < m_lineCount);
-
-			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(blockWidth, 0), new Point(blockWidth, Math.Min(yOffset, RenderSize.Height)));
-			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(codeXOffset - c_marginWidth / 2.0, 0), new Point(codeXOffset - c_marginWidth / 2.0, Math.Min(yOffset, RenderSize.Height)));
-
-			if (m_columnWidths[2] != lineNumberWidth || m_columnWidths[4] != codeWidth)
+			if (layout != m_layout)
+			{
+				m_layout = layout;
 				RedrawSoon();
-			m_columnWidths[2] = lineNumberWidth;
-			m_columnWidths[4] = codeWidth;
-			SetHorizontalScrollInfo(m_columnWidths.Sum(), RenderSize.Width, null);
+			}
 		}
 
-		private void RedrawSoon()
-		{
-			RedrawSoon(DispatcherPriority.Render);
-		}
-
-		private void RedrawSoon(DispatcherPriority priority)
+		private void RedrawSoon(DispatcherPriority priority = DispatcherPriority.Render)
 		{
 			Dispatcher.BeginInvoke(priority, new SendOrPostCallback(delegate { Render(); }), null);
 		}
@@ -233,24 +195,24 @@ namespace GitBlame
 
 		private FormattedText CreateSmallFormattedText(string text, Typeface typeface, double maxWidth)
 		{
-			FormattedText formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize * 0.75, Brushes.Black);
-			formattedText.MaxTextWidth = maxWidth;
-			formattedText.Trimming = TextTrimming.CharacterEllipsis;
-			formattedText.MaxLineCount = 1;
+			FormattedText formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize * 0.75, Brushes.Black)
+			{
+				MaxTextWidth = maxWidth,
+				Trimming = TextTrimming.CharacterEllipsis,
+				MaxLineCount = 1,
+			};
 			return formattedText;
 		}
 
-		private void CreateBrushesForAuthors()
+		private void CreateBrushesForAuthors(int count)
 		{
-			// create brushes by author frequency
-			foreach (Person author in m_blame.Blocks.Select(b => b.Commit).Distinct().GroupBy(c => c.Author).OrderByDescending(g => g.Count()).Select(g => g.Key))
+			for (int index = 0; index < count; index++)
 			{
-				if (!m_personBrush.ContainsKey(author))
+				int colorCount = m_colors.Length;
+				Color color = m_colors[index % colorCount];
+				Brush brush;
+				switch (index / colorCount)
 				{
-					Color color = m_colors[m_currentColor];
-					Brush brush;
-					switch (m_currentPattern)
-					{
 					case 0:
 						brush = new SolidColorBrush(color);
 						break;
@@ -259,17 +221,10 @@ namespace GitBlame
 						// TODO: create more pattern brushes
 						brush = CreateLeftDiagonalBrush(color);
 						break;
-					}
-
-					brush.Freeze();
-					m_personBrush.Add(author, brush);
-
-					if (++m_currentColor == m_colors.Length)
-					{
-						m_currentColor = 0;
-						m_currentPattern++;
-					}
 				}
+
+				brush.Freeze();
+				m_personBrush.Add(index, brush);
 			}
 		}
 
@@ -350,25 +305,13 @@ namespace GitBlame
 			Color.FromRgb(255, 0, 127),
 		};
 
-		const double c_marginWidth = 10;
-
 		readonly DrawingVisual m_visual;
 		readonly Brush m_newLineBrush;
 		readonly Brush m_changedTextBrush;
-
+		readonly Dictionary<int, Brush> m_personBrush;
 		BlameResult m_blame;
-		double[] m_columnWidths;
-		double m_minimumLineNumberWidth;
+		BlameLayout m_layout;
 		int m_lineCount;
-		int m_topLineIndex;
 		double m_emSize;
-		double m_lineHeight;
-
-		Dictionary<Person, Brush> m_personBrush;
-		int m_currentColor;
-		int m_currentPattern;
-
-		DateTimeOffset m_oldestCommit;
-		double m_dateScale;
 	}
 }

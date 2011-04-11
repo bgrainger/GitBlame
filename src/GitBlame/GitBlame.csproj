@@ -58,6 +58,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BlameControl.cs" />
+    <Compile Include="Layout\BlameLayout.cs" />
     <Compile Include="Models\GitWrapper.cs" />
     <Compile Include="Models\Line.cs" />
     <Compile Include="Models\LinePart.cs" />
