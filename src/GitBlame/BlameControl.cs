@@ -101,10 +101,11 @@ namespace GitBlame
 
 			foreach (DisplayBlock block in layout.Blocks)
 			{
-				Rect blockRectangle = block.Position;
+				Rect blockRectangle = block.CommitPosition;
 
+				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, block.AuthorPosition);
 				drawingContext.PushOpacity(block.Alpha);
-				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, blockRectangle);
+				drawingContext.DrawRectangle(Brushes.DarkGray, null, blockRectangle);
 				drawingContext.Pop();
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, blockRectangle.Bottom + 0.5), new Point(RenderSize.Width, blockRectangle.Bottom + 0.5));

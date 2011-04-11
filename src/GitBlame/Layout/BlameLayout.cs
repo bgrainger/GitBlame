@@ -38,7 +38,7 @@ namespace GitBlame.Layout
 			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
 
 			// set up default column widths
-			m_columnWidths = new double[] { 200, 10, 0, 10, 5, 0 };
+			m_columnWidths = new double[] { 210, 10, 0, 10, 5, 0 };
 
 			// set default values
 			m_lineHeight = 1;
@@ -198,20 +198,23 @@ namespace GitBlame.Layout
 				int remainingLines = m_lineCount - lineCount;
 				int linesFromThisBlock = Math.Min(block.LineCount - Math.Max(0, hiddenLines), remainingLines);
 				double alpha = (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale + 0.1;
-				Rect position = new Rect(0, lineCount * m_lineHeight, m_columnWidths[0], linesFromThisBlock * m_lineHeight);
+
+				const double authorWidth = 10;
+				Rect authorPosition = new Rect(0, lineCount * m_lineHeight, authorWidth, linesFromThisBlock * m_lineHeight);
+				Rect commitPosition = new Rect(authorWidth, authorPosition.Top, m_columnWidths[0] - authorWidth, authorPosition.Height);
 
 				// add the commit summary if there is space
 				Rect summaryPosition = Rect.Empty;
 
 				if (linesFromThisBlock > 1)
 				{
-					summaryPosition = position;
+					summaryPosition = commitPosition;
 					summaryPosition.Inflate(-1, -1);
 					summaryPosition.Offset(0, m_lineHeight);
 					summaryPosition.Height = Math.Min(summaryPosition.Height - m_lineHeight, m_renderSize.Height);
 				}
 
-				m_blocks.Add(new DisplayBlock(position, summaryPosition, alpha, m_authorIndex[block.Commit.Author], block.Commit));
+				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex[block.Commit.Author], block.Commit));
 
 				blockIndex++;
 				lineCount += linesFromThisBlock;
@@ -293,43 +296,49 @@ namespace GitBlame.Layout
 
 	internal sealed class DisplayBlock
 	{
-		public DisplayBlock(Rect position, Rect summaryPosition, double alpha, int authorIndex, Commit commit)
+		public DisplayBlock(Rect authorPosition, Rect commitPosition, Rect summaryPosition, double alpha, int authorIndex, Commit commit)
 		{
-			m_position = position;
+			m_authorPosition = authorPosition;
+			m_commitPosition = commitPosition;
 			m_summaryPosition = summaryPosition;
 			m_alpha = alpha;
 			m_authorIndex = authorIndex;
 			m_commit = commit;
 		}
 
-		public Rect Position
+		public Rect AuthorPosition
 		{
-			get { return m_position; }
+			get { return m_authorPosition; }
+		}
+
+		public Rect CommitPosition
+		{
+			get { return m_commitPosition; }
 		}
 
 		public double AuthorX
 		{
-			get { return m_position.Left + 1; }
+			get { return m_commitPosition.Left + 1; }
 		}
 
 		public double AuthorWidth
 		{
-			get { return m_position.Width - DateWidth - 5; }
+			get { return m_commitPosition.Width - DateWidth - 5; }
 		}
 
 		public double TextY
 		{
-			get { return m_position.Top + 1; }
+			get { return m_commitPosition.Top + 1; }
 		}
 
 		public double DateX
 		{
-			get { return m_position.Width - 1 - DateWidth; }
+			get { return m_commitPosition.Width - 1 - DateWidth; }
 		}
 
 		public double DateWidth
 		{
-			get { return m_position.Width * 0.425; }
+			get { return m_commitPosition.Width * 0.425; }
 		}
 
 		public double Alpha
@@ -371,7 +380,8 @@ namespace GitBlame.Layout
 			}
 		}
 
-		readonly Rect m_position;
+		readonly Rect m_authorPosition;
+		readonly Rect m_commitPosition;
 		readonly Rect m_summaryPosition;
 		readonly double m_alpha;
 		readonly int m_authorIndex;
