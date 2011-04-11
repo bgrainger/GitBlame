@@ -63,6 +63,7 @@
     <Compile Include="Models\LinePart.cs" />
     <Compile Include="Models\LinePartStatus.cs" />
     <Compile Include="Utility\Invariant.cs" />
+    <Compile Include="Utility\EnumerableExtensions.cs" />
     <Compile Include="Utility\ExternalProcess.cs" />
     <Compile Include="Utility\GenericComparer.cs" />
     <Compile Include="Utility\ScrollableControl.cs" />
