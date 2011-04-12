@@ -117,6 +117,11 @@ namespace GitBlame.Layout
 			get { return m_columnWidths.Sum(); }
 		}
 
+		public BlameLayout Refresh()
+		{
+			return new BlameLayout(this);
+		}
+
 		public BlameLayout WithCodeWidth(double width)
 		{
 			return width <= m_columnWidths[c_codeColumnIndex] ? this : new BlameLayout(this, codeColumnWidth: width);

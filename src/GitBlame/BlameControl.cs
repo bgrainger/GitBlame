@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -34,11 +35,15 @@ namespace GitBlame
 
 		internal void SetBlameResult(BlameResult blame)
 		{
+			if (m_blame != null)
+				m_blame.PropertyChanged -= BlameResult_PropertyChanged;
+
 			double oldLineHeight = m_layout == null ? 1.0 : m_layout.LineHeight;
 
 			m_blame = blame;
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
+			m_blame.PropertyChanged += BlameResult_PropertyChanged;
 
 			m_hoverCommitId = null;
 			m_selectedCommitId = null;
@@ -222,6 +227,12 @@ namespace GitBlame
 				m_layout = layout;
 				RedrawSoon();
 			}
+		}
+
+		private void BlameResult_PropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			m_layout = m_layout.Refresh();
+			RedrawSoon(DispatcherPriority.ApplicationIdle);
 		}
 
 		private void RedrawSoon(DispatcherPriority priority = DispatcherPriority.Render)

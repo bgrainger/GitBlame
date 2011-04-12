@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using GitBlame.Utility;
 
 namespace GitBlame.Models
@@ -28,69 +29,79 @@ namespace GitBlame.Models
 			ParseBlameOutput(results.Output, directory, blocks, commits);
 
 			// allocate a (1-based) array for all lines in the file
-			int lineCount = blocks.Sum(b => b.LineCount);
-			Line[] lines = new Line[lineCount + 1];
 			string[] currentLines = File.ReadAllLines(filePath);
+			int lineCount = blocks.Sum(b => b.LineCount);
+			Invariant.Assert(lineCount == currentLines.Length, "Unexpected number of lines in file.");
 
-			// process the blocks for each unique commit
-			foreach (var group in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
+			// initialize all lines from current version
+			Line[] lines = currentLines
+				.Select((l, n) => new Line(n + 1, l, false))
+				.ToArray();
+
+			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
+
+			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				// check if this commit modifies a previous one
-				Commit commit = group.Key;
-				string commitId = commit.Id;
-				string previousCommitId = commit.PreviousCommitId;
-
-				if (previousCommitId != null)
+				// process the blocks for each unique commit
+				foreach (var group in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
 				{
-					// get the differences between this commit and the previous one
-					// TODO: Use --word-diff-regex to be smarter about word-breaking
-					results = git.Run(new ProcessRunSettings("diff", "-U0", "--word-diff=porcelain", previousCommitId + ".." + commitId, "--", fileName));
-					if (results.ExitCode != 0)
-						throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
+					// check if this commit modifies a previous one
+					Commit commit = group.Key;
+					string commitId = commit.Id;
+					string previousCommitId = commit.PreviousCommitId;
 
-					// process all the lines in the diff output, matching them to blocks
-					using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(results.Output).GetEnumerator())
+					if (previousCommitId != null)
 					{
-						// move to first line (which is expected to always be present)
-						Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
-						Line line = lineEnumerator.Current;
+						// get the differences between this commit and the previous one
+						// TODO: Use --word-diff-regex to be smarter about word-breaking
+						results = git.Run(new ProcessRunSettings("diff", "-U0", "--word-diff=porcelain", previousCommitId + ".." + commitId, "--", fileName));
+						if (results.ExitCode != 0)
+							throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
 
-						// process all the blocks, finding the corresponding lines from the diff for each one
-						foreach (Block block in group)
+						// process all the lines in the diff output, matching them to blocks
+						using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(results.Output).GetEnumerator())
 						{
-							// skip all lines that occurred before the start of this block
-							while (line.LineNumber < block.OriginalStartLine)
-							{
-								Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
-								line = lineEnumerator.Current;
-							}
+							// move to first line (which is expected to always be present)
+							Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
+							Line line = lineEnumerator.Current;
 
-							// process all lines in the current block
-							while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+							// process all the blocks, finding the corresponding lines from the diff for each one
+							foreach (Block block in group)
 							{
-								// assign this line to the correct index in the blamed version of the file
-								Invariant.Assert(lines[line.LineNumber - block.OriginalStartLine + block.StartLine] == null, "Current line has already been created.");
-								lines[line.LineNumber - block.OriginalStartLine + block.StartLine] = line;
-
-								// move to the next line (if available)
-								if (lineEnumerator.MoveNext())
+								// skip all lines that occurred before the start of this block
+								while (line.LineNumber < block.OriginalStartLine)
+								{
+									Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
 									line = lineEnumerator.Current;
-								else
-									break;
+								}
+
+								// process all lines in the current block
+								while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+								{
+									// assign this line to the correct index in the blamed version of the file
+									// Invariant.Assert(lines[line.LineNumber - block.OriginalStartLine + block.StartLine] == null, "Current line has already been created.");
+									blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
+
+									// move to the next line (if available)
+									if (lineEnumerator.MoveNext())
+										line = lineEnumerator.Current;
+									else
+										break;
+								}
 							}
 						}
 					}
+					else
+					{
+						// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
+						foreach (Block block in group)
+							for (int lineNumber = block.StartLine; lineNumber < block.StartLine + block.LineCount; lineNumber++)
+								blameResult.SetLine(lineNumber, new Line(lineNumber, currentLines[lineNumber - 1], true));
+					}
 				}
-				else
-				{
-					// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
-					foreach (Block block in group)
-						for (int lineIndex = block.StartLine; lineIndex < block.StartLine + block.LineCount; lineIndex++)
-							lines[lineIndex] = new Line(lineIndex, new List<LinePart> { new LinePart(currentLines[lineIndex - 1], LinePartStatus.New) }.AsReadOnly());
-				}
-			}
+			});
 
-			return new BlameResult(blocks.AsReadOnly(), lines.Skip(1).ToList().AsReadOnly(), commits);
+			return blameResult;
 		}
 
 		private static void ParseBlameOutput(string output, string directory, List<Block> blocks, Dictionary<string, Commit> commits)
