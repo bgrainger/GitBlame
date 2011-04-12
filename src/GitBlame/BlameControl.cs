@@ -24,6 +24,8 @@ namespace GitBlame
 			AddVisualChild(m_visual);
 
 			m_personBrush = new Dictionary<int, Brush>();
+			m_commitBrush = new Dictionary<string, SolidColorBrush>();
+			m_commitAlpha = new Dictionary<string, byte>();
 			m_newLineBrush = new SolidColorBrush(Color.FromRgb(108, 226, 108));
 			m_newLineBrush.Freeze();
 			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
@@ -38,7 +40,11 @@ namespace GitBlame
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
 
+			m_hoverCommitId = null;
+			m_selectedCommitId = null;
 			m_personBrush.Clear();
+			m_commitBrush.Clear();
+			m_commitAlpha.Clear();
 			CreateBrushesForAuthors(m_layout.AuthorCount);
 
 			SetVerticalScrollInfo(m_lineCount + 1, null, 0);
@@ -79,23 +85,35 @@ namespace GitBlame
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
-			if (m_layout != null)
-			{
-				string lastHoverCommitId = m_hoverCommitId;
-				m_hoverCommitId = null;
+			string hoverCommitId = GetCommitIdFromPoint(e.GetPosition(this));
+			if (hoverCommitId == m_selectedCommitId)
+				hoverCommitId = null;
+			SetCommitColor(ref m_hoverCommitId, hoverCommitId, m_changedTextBrush.Color);
+		}
 
-				foreach (DisplayBlock block in m_layout.Blocks)
-				{
-					if (block.CommitPosition.Contains(e.GetPosition(this)))
-					{
-						m_hoverCommitId = block.CommitId;
-						break;
-					}
-				}
+		protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+		{
+			SetCommitColor(ref m_selectedCommitId, GetCommitIdFromPoint(e.GetPosition(this)), Color.FromRgb(79, 178, 255));
+			m_hoverCommitId = null;
+		}
 
-				if (m_hoverCommitId != lastHoverCommitId)
-					RedrawSoon();
-			}
+		private void SetCommitColor(ref string commitId, string newCommitId, Color color)
+		{
+			if (commitId != null)
+				m_commitBrush[commitId].Color = GetCommitColor(commitId);
+
+			if (newCommitId != null)
+				m_commitBrush[newCommitId].Color = color;
+
+			commitId = newCommitId;
+		}
+
+		private string GetCommitIdFromPoint(Point point)
+		{
+			return m_layout == null ? null : m_layout.Blocks
+				.Where(b => b.CommitPosition.Contains(point))
+				.Select(b => b.CommitId)
+				.FirstOrDefault();
 		}
 
 		protected override void OnScrollChanged()
@@ -118,6 +136,8 @@ namespace GitBlame
 			Typeface typeface = TextElementUtility.GetTypeface(this);
 			BlameLayout layout = m_layout.WithRenderSize(RenderSize);
 
+			drawingContext.DrawRectangle(Brushes.White, null, new Rect(new Point(), RenderSize));
+
 			foreach (Rect newLineRectangle in layout.NewLines)
 				drawingContext.DrawRectangle(m_newLineBrush, null, newLineRectangle);
 
@@ -126,9 +146,7 @@ namespace GitBlame
 				Rect blockRectangle = block.CommitPosition;
 
 				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, block.AuthorPosition);
-				drawingContext.PushOpacity(block.Alpha);
-				drawingContext.DrawRectangle(block.CommitId == m_hoverCommitId ? Brushes.Gold : Brushes.DarkGray, null, blockRectangle);
-				drawingContext.Pop();
+				drawingContext.DrawRectangle(GetOrCreateCommitBrush(block), null, blockRectangle);
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, blockRectangle.Bottom + 0.5), new Point(RenderSize.Width, blockRectangle.Bottom + 0.5));
 
@@ -225,6 +243,23 @@ namespace GitBlame
 				MaxLineCount = 1,
 			};
 			return formattedText;
+		}
+
+		private SolidColorBrush GetOrCreateCommitBrush(DisplayBlock block)
+		{
+			SolidColorBrush brush;
+			if (!m_commitBrush.TryGetValue(block.CommitId, out brush))
+			{
+				m_commitAlpha.Add(block.CommitId, (byte) (block.Alpha * 255));
+				brush = new SolidColorBrush(GetCommitColor(block.CommitId));
+				m_commitBrush.Add(block.CommitId, brush);
+			}
+			return brush;
+		}
+
+		private Color GetCommitColor(string commitId)
+		{
+			return Color.FromArgb(m_commitAlpha[commitId], 128, 128, 128);
 		}
 
 		private void CreateBrushesForAuthors(int count)
@@ -330,12 +365,15 @@ namespace GitBlame
 
 		readonly DrawingVisual m_visual;
 		readonly Brush m_newLineBrush;
-		readonly Brush m_changedTextBrush;
+		readonly SolidColorBrush m_changedTextBrush;
 		readonly Dictionary<int, Brush> m_personBrush;
+		readonly Dictionary<string, SolidColorBrush> m_commitBrush;
+		readonly Dictionary<string, byte> m_commitAlpha;
 		BlameResult m_blame;
 		BlameLayout m_layout;
 		int m_lineCount;
 		double m_emSize;
 		string m_hoverCommitId;
+		string m_selectedCommitId;
 	}
 }
