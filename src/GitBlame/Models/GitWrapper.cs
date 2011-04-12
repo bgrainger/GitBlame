@@ -254,7 +254,7 @@ namespace GitBlame.Models
 
 			foreach (string folder in parentFolders)
 			{
-				string gitPath = Path.Combine(folder, @"Git\cmd\git.cmd");
+				string gitPath = Path.Combine(folder, @"Git\bin\git.exe");
 				if (File.Exists(gitPath))
 					return gitPath;
 			}
