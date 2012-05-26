@@ -360,18 +360,21 @@ namespace GitBlame
 		// TODO: Get nice color palette.
 		static readonly Color[] m_colors = new[]
 		{
-			Color.FromRgb(255, 0, 0),
-			Color.FromRgb(255, 127, 0),
-			Color.FromRgb(255, 255, 0),
-			Color.FromRgb(127, 255, 0),
-			Color.FromRgb(0, 255, 0),
-			Color.FromRgb(0, 255, 127),
-			Color.FromRgb(0, 255, 255),
-			Color.FromRgb(0, 127, 255),
-			Color.FromRgb(0, 0, 255),
-			Color.FromRgb(127, 0, 255),
-			Color.FromRgb(255, 0, 255),
-			Color.FromRgb(255, 0, 127),
+			Color.FromRgb(10, 100, 255),
+			Color.FromRgb(245, 4, 204),
+			Color.FromRgb(252, 139, 0),
+			Color.FromRgb(0, 228, 32),
+			Color.FromRgb(0, 3, 245),
+			Color.FromRgb(251, 0, 110),
+			Color.FromRgb(252, 186, 0),
+			Color.FromRgb(0, 251, 179),
+			Color.FromRgb(123, 0, 252),
+			Color.FromRgb(246, 0, 0),
+			Color.FromRgb(236, 247, 38),
+			Color.FromRgb(180, 0, 251),
+			Color.FromRgb(251, 90, 3),
+			Color.FromRgb(149, 253, 3),
+			Color.FromRgb(0, 236, 252),
 		};
 
 		readonly DrawingVisual m_visual;
