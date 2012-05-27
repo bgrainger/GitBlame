@@ -198,7 +198,7 @@ namespace GitBlame
 				double xOffset = layout.CodeColumn.Left - HorizontalOffset;
 				foreach (LinePart part in line.Parts)
 				{
-					FormattedText text = CreateFormattedText(string.Join("", part.Text), typeface);
+					FormattedText text = CreateFormattedText(string.Join("", part.Text.Replace("\t", "    ")), typeface);
 
 					if (!line.IsNew && part.Status == LinePartStatus.New)
 						drawingContext.DrawRectangle(m_changedTextBrush, null, new Rect(xOffset, yOffset, text.WidthIncludingTrailingWhitespace, layout.LineHeight));
