@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using GitBlame.Utility;
 
 namespace GitBlame.Models
@@ -41,6 +42,10 @@ namespace GitBlame.Models
 
 		internal void SetLine(int lineNumber, Line line)
 		{
+			var existingLineText = string.Join("", m_lines[lineNumber - 1].Parts.Select(p => p.Text));
+			var lineText = string.Join("", line.Parts.Select(p => p.Text));
+			Invariant.Assert(lineText == existingLineText, "Line text should not be changed.");
+
 			m_lines[lineNumber - 1] = line;
 
 			PropertyChangedEventHandler handler = PropertyChanged;

@@ -5,8 +5,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using DiffMatchPatch;
 using GitBlame.Utility;
 
 namespace GitBlame.Models
@@ -52,14 +54,25 @@ namespace GitBlame.Models
 
 					if (previousCommitId != null)
 					{
-						// get the differences between this commit and the previous one
-						// TODO: Use --word-diff-regex to be smarter about word-breaking
-						results = git.Run(new ProcessRunSettings("diff", "-U0", "--word-diff=porcelain", previousCommitId + ".." + commitId, "--", fileName));
-						if (results.ExitCode != 0)
+						// get the contents of the old version of the file
+						var oldFileResults = git.Run(new ProcessRunSettings("show", previousCommitId + ":./" + fileName));
+						if (oldFileResults.ExitCode != 0)
 							throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
 
+						// get the contents of the new version of the file
+						var newFileResults = git.Run(new ProcessRunSettings("show", commitId + ":./" + fileName));
+						if (newFileResults.ExitCode != 0)
+							throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
+
+						// diff the two versions
+						var diff = new diff_match_patch();
+						var diffs = diff.diff_main(oldFileResults.Output, newFileResults.Output);
+						int lineCount1 = new Regex(@"(\r\n)", RegexOptions.Singleline).Matches(string.Join("", diffs.Where(d => d.operation != Operation.DELETE).Select(d => d.text))).Count;
+						diff.diff_cleanupSemantic(diffs);
+						int lineCount2 = new Regex(@"(\r\n)", RegexOptions.Singleline).Matches(string.Join("", diffs.Where(d => d.operation != Operation.DELETE).Select(d => d.text))).Count;
+
 						// process all the lines in the diff output, matching them to blocks
-						using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(results.Output).GetEnumerator())
+						using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(diffs).GetEnumerator())
 						{
 							// move to first line (which is expected to always be present)
 							Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
@@ -79,7 +92,6 @@ namespace GitBlame.Models
 								while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
 								{
 									// assign this line to the correct index in the blamed version of the file
-									// Invariant.Assert(lines[line.LineNumber - block.OriginalStartLine + block.StartLine] == null, "Current line has already been created.");
 									blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
 
 									// move to the next line (if available)
@@ -147,56 +159,56 @@ namespace GitBlame.Models
 			}
 		}
 
-		private static IEnumerable<Line> ParseDiffOutput(string output)
+		private static IEnumerable<Line> ParseDiffOutput(List<Diff> diffs)
 		{
-			using (StringReader reader = new StringReader(output))
+			int lineNumber = 1;
+			StringBuilder currentPart = new StringBuilder();
+			List<LinePart> currentParts = new List<LinePart>();
+			char lastChar = default(char);
+
+			// process all "equal" or "insert" diffs
+			foreach (var diff in diffs.Where(d => d.operation != Operation.DELETE))
 			{
-				// ignore header
-				reader.ReadLine();
-				reader.ReadLine();
-				reader.ReadLine();
-				reader.ReadLine();
-
-				string diffLine = reader.ReadLine();
-				while (diffLine != null)
+				// walk the text, breaking it into lines
+				foreach (char ch in diff.text)
 				{
-					Match match = Regex.Match(diffLine, @"^@@ -([\d]+)(?:,(\d+))? \+([\d]+)(?:,(\d+))? @@");
-					int startingNewLine = int.Parse(match.Groups[3].Value);
-					int expectedNewLineCount = match.Groups[4].Success ? int.Parse(match.Groups[4].Value) : 1;
-
-					List<LinePart> parts = new List<LinePart>();
-					int newLineCount = 0;
-
-					// read one logical line (split across multiple physical lines) at a time
-					bool lastLineWasDeleted = false;
-					while ((diffLine = reader.ReadLine()) != null)
+					if ((ch == '\r' || ch == '\n'))
 					{
-						char marker = diffLine[0];
+						// treat "\r\n" as one newline
+						if (!(lastChar == '\r' && ch == '\n'))
+						{
+							if (currentPart.Length != 0)
+								currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
 
-						// check for end-of-line indicator
-						if (marker == '~' && !lastLineWasDeleted)
-						{
-							yield return new Line(startingNewLine + newLineCount, parts.AsReadOnly());
-							parts = new List<LinePart>();
-							newLineCount++;
-						}
-						else if (marker == '@')
-						{
-							Invariant.Assert(newLineCount == expectedNewLineCount, "Didn't read expected number of diff lines.");
-							break;
-						}
-						else if (marker == ' ' || marker == '+')
-						{
-							lastLineWasDeleted = false;
-							parts.Add(new LinePart(diffLine.Substring(1), marker == ' ' ? LinePartStatus.Existing : LinePartStatus.New));
-						}
-						else if (marker == '-')
-						{
-							lastLineWasDeleted = true;
+							// found another line
+							yield return new Line(lineNumber, currentParts.ToArray().AsReadOnly());
+
+							// reset for next line
+							currentPart.Length = 0;
+							currentParts.Clear();
+							lineNumber++;
 						}
 					}
+					else
+					{
+						// add this character to the current part
+						currentPart.Append(ch);
+					}
+
+					lastChar = ch;
+				}
+
+				// handle any remaining text at the end of a diff
+				if (currentPart.Length != 0)
+				{
+					currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
+					currentPart.Length = 0;
 				}
 			}
+
+			// handle any remaining text at the end of the file
+			if (currentParts.Count != 0)
+				yield return new Line(lineNumber, currentParts.ToArray().AsReadOnly());
 		}
 
 		// Reads known values from 'tagValues' to create a Commit object.
