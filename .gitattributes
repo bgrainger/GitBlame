@@ -1,0 +1,15 @@
+*.cs        text diff=csharp
+*.xaml      text
+*.csproj    text
+*.sln       text
+*.tt        text
+*.ps1       text
+*.cmd       text
+*.msbuild   text
+*.md        text
+*.settings  text
+*.resx      text
+*.config    text
+*.txt       text
+
+COPYING     text

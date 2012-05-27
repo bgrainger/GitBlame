@@ -12,9 +12,6 @@ repository, open `GitBlame\GitBlame.sln` and build it.
 [msysgit](http://code.google.com/p/msysgit/) must be installed for GitBlame
 to function correctly.
 
-This repository assumes that `core.autocrlf = false`, so that Windows line
-endings are committed as-is.
-
 ## License
 
 GitBlame is licensed under GPL v2, just like git itself. See `COPYING` for
