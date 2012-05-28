@@ -293,9 +293,17 @@ namespace GitBlame
 						brush = new SolidColorBrush(color);
 						break;
 
+					case 1:
+						brush = CreateLeftDiagonalBrush(color);
+						break;
+
+					case 2:
+						brush = CreateRightDiagonalBrush(color);
+						break;
+
 					default:
 						// TODO: create more pattern brushes
-						brush = CreateLeftDiagonalBrush(color);
+						brush = CreateCheckerboard(color);
 						break;
 				}
 
@@ -306,55 +314,49 @@ namespace GitBlame
 
 		private static Brush CreateLeftDiagonalBrush(Color color)
 		{
-			// TODO: Move to XAML.
-			PathFigure figure1 = new PathFigure
+			PathFigure figure1 = CreateSimpleClosedPathFigure(new Point(5, 0), new Point(10, 0), new Point(0, 10), new Point(0, 5));
+			PathFigure figure2 = CreateSimpleClosedPathFigure(new Point(10, 5), new Point(10, 10), new Point(5, 10));
+			GeometryDrawing drawing = CreateSimpleGeometryDrawing(color, figure1, figure2);
+			return CreateStandardDrawingBrush(drawing);
+		}
+
+		private static Brush CreateRightDiagonalBrush(Color color)
+		{
+			PathFigure figure1 = CreateSimpleClosedPathFigure(new Point(5, 0), new Point(0, 0), new Point(10, 10), new Point(10, 5));
+			PathFigure figure2 = CreateSimpleClosedPathFigure(new Point(0, 5), new Point(0, 10), new Point(5, 10));
+			GeometryDrawing drawing = CreateSimpleGeometryDrawing(color, figure1, figure2);
+			return CreateStandardDrawingBrush(drawing);
+		}
+
+		private static Brush CreateCheckerboard(Color color)
+		{
+			PathFigure figure1 = CreateSimpleClosedPathFigure(new Point(0, 0), new Point(5, 0), new Point(5, 5), new Point(0, 5));
+			PathFigure figure2 = CreateSimpleClosedPathFigure(new Point(5, 5), new Point(10, 5), new Point(10, 10), new Point(5, 10));
+			GeometryDrawing drawing = CreateSimpleGeometryDrawing(color, figure1, figure2);
+			return CreateStandardDrawingBrush(drawing);
+		}
+
+		private static PathFigure CreateSimpleClosedPathFigure(params Point[] points)
+		{
+			return new PathFigure
 			{
 				IsClosed = true,
-				StartPoint = new Point(5, 0),
-				Segments =
-				{ 
-					new PolyLineSegment
-					{
-						Points =
-						{
-							new Point(10, 0),
-							new Point(0, 10),
-							new Point(0, 5),
-						},
-					}
-				},
+				StartPoint = points[0],
+				Segments = { new PolyLineSegment { Points = new PointCollection(points.Skip(1)) } },
 			};
+		}
 
-			PathFigure figure2 = new PathFigure
+		private static GeometryDrawing CreateSimpleGeometryDrawing(Color color, params PathFigure[] figures)
+		{
+			return new GeometryDrawing
 			{
-				IsClosed = true,
-				StartPoint = new Point(10, 5),
-				Segments =
-				{
-					new PolyLineSegment
-					{
-						Points =
-						{
-							new Point(10, 10),
-							new Point(5, 10),
-						},
-					},
-				},
-			};
-
-			GeometryDrawing drawing = new GeometryDrawing
-			{
-				Geometry = new PathGeometry
-				{
-					Figures =
-					{
-						figure1,
-						figure2,
-					},
-				},
+				Geometry = new PathGeometry { Figures = new PathFigureCollection(figures) },
 				Brush = new SolidColorBrush(color),
 			};
+		}
 
+		private static DrawingBrush CreateStandardDrawingBrush(Drawing drawing)
+		{
 			return new DrawingBrush
 			{
 				Drawing = drawing,
