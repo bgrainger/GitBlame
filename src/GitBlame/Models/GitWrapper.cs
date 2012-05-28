@@ -6,10 +6,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using DiffMatchPatch;
 using GitBlame.Utility;
+using LibGit2Sharp;
 
 namespace GitBlame.Models
 {
@@ -42,6 +42,10 @@ namespace GitBlame.Models
 
 			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
 
+			string repositoryPath = GetRepositoryPath(directory);
+			string workingDirectoryPath = Path.GetDirectoryName(repositoryPath);
+			string relativePath = filePath.Substring(workingDirectoryPath.Length + 1);
+
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
 				// process the blocks for each unique commit
@@ -54,22 +58,17 @@ namespace GitBlame.Models
 
 					if (previousCommitId != null)
 					{
-						// get the contents of the old version of the file
-						var oldFileResults = git.Run(new ProcessRunSettings("show", previousCommitId + ":./" + fileName));
-						if (oldFileResults.ExitCode != 0)
-							throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
-
-						// get the contents of the new version of the file
-						var newFileResults = git.Run(new ProcessRunSettings("show", commitId + ":./" + fileName));
-						if (newFileResults.ExitCode != 0)
-							throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git diff exited with code {0}", results.ExitCode));
+						string oldFileContents, newFileContents;
+						using (var repo = new Repository(repositoryPath))
+						{
+							oldFileContents = GetFileContentAsUtf8(repo, previousCommitId, relativePath);
+							newFileContents = GetFileContentAsUtf8(repo, commitId, relativePath);
+						}
 
 						// diff the two versions
 						var diff = new diff_match_patch();
-						var diffs = diff.diff_main(oldFileResults.Output, newFileResults.Output);
-						int lineCount1 = new Regex(@"(\r\n)", RegexOptions.Singleline).Matches(string.Join("", diffs.Where(d => d.operation != Operation.DELETE).Select(d => d.text))).Count;
+						var diffs = diff.diff_main(oldFileContents, newFileContents);
 						diff.diff_cleanupSemantic(diffs);
-						int lineCount2 = new Regex(@"(\r\n)", RegexOptions.Singleline).Matches(string.Join("", diffs.Where(d => d.operation != Operation.DELETE).Select(d => d.text))).Count;
 
 						// process all the lines in the diff output, matching them to blocks
 						using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(diffs).GetEnumerator())
@@ -159,7 +158,7 @@ namespace GitBlame.Models
 			}
 		}
 
-		private static IEnumerable<Line> ParseDiffOutput(List<Diff> diffs)
+		private static IEnumerable<Line> ParseDiffOutput(List<DiffMatchPatch.Diff> diffs)
 		{
 			int lineNumber = 1;
 			StringBuilder currentPart = new StringBuilder();
@@ -272,6 +271,35 @@ namespace GitBlame.Models
 			}
 
 			throw new ApplicationException("Can't find msysgit installed on the system.");
+		}
+
+		private static string GetRepositoryPath(string directory)
+		{
+			do
+			{
+				string gitDirectory = Path.Combine(directory, ".git");
+				if (Directory.Exists(gitDirectory))
+					return gitDirectory;
+
+				directory = Path.GetDirectoryName(directory);
+			}
+			while (directory != null);
+
+			throw new ApplicationException("Can't find .git directory for " + directory);
+		}
+
+		private static string GetFileContentAsUtf8(Repository repo, string commitId, string relativePath)
+		{
+			// get content from commit
+			var commit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
+			var blob = (Blob) commit.Tree[relativePath].Target;
+			string content = blob.ContentAsUtf8();
+
+			// strip BOM (U+FEFF) if present
+			if (content.Length > 0 && content[0] == '\uFEFF')
+				content = content.Substring(1);
+
+			return content;
 		}
 	}
 }

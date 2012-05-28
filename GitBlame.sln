@@ -3,26 +3,22 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitBlame", "src\GitBlame\GitBlame.csproj", "{5060BAD3-1099-457C-A44E-63C73786DA53}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibGit2Sharp", "ext\libgit2sharp\LibGit2Sharp\LibGit2Sharp.csproj", "{EE6ED99F-CB12-4683-B055-D28FC7357A34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
-		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|x86.ActiveCfg = Debug|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|x86.Build.0 = Debug|x86
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|Any CPU.ActiveCfg = Release|x86
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|Mixed Platforms.Build.0 = Release|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|x86.ActiveCfg = Release|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|x86.Build.0 = Release|x86
+		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

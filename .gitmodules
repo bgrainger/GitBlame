@@ -1,0 +1,3 @@
+[submodule "ext/libgit2sharp"]
+	path = ext/libgit2sharp
+	url = https://github.com/libgit2/libgit2sharp.git
