@@ -6,7 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 using DiffMatchPatch;
 using GitBlame.Utility;
 using LibGit2Sharp;
@@ -46,26 +46,38 @@ namespace GitBlame.Models
 			string workingDirectoryPath = Path.GetDirectoryName(repositoryPath);
 			string relativePath = filePath.Substring(workingDirectoryPath.Length + 1);
 
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				// process the blocks for each unique commit
-				foreach (var group in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
-				{
-					// check if this commit modifies a previous one
-					Commit commit = group.Key;
-					string commitId = commit.Id;
-					string previousCommitId = commit.PreviousCommitId;
-
-					if (previousCommitId != null)
+			// start a task to get the content of this file from each commit in its history
+			var getFileContentTasks = blocks
+				.SelectMany(b => new[] { b.Commit.Id, b.Commit.PreviousCommitId })
+				.Distinct()
+				.Where(id => id != null)
+				.ToDictionary(
+					id => id,
+					id => Task.Factory.StartNew(() =>
 					{
-						string oldFileContents, newFileContents;
 						using (var repo = new Repository(repositoryPath))
-						{
-							oldFileContents = GetFileContentAsUtf8(repo, previousCommitId, relativePath);
-							newFileContents = GetFileContentAsUtf8(repo, commitId, relativePath);
-						}
+							return GetFileContentAsUtf8(repo, id, relativePath);
+					}));
 
+			// process the blocks for each unique commit
+			foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
+			{
+				// check if this commit modifies a previous one
+				var group = groupLoopVariable;
+				Commit commit = group.Key;
+				string commitId = commit.Id;
+				string previousCommitId = commit.PreviousCommitId;
+
+				if (previousCommitId != null)
+				{
+					// diff the old and new file contents when they become available
+					Task<string> getOldFileContentTask = getFileContentTasks[previousCommitId];
+					Task<string> getNewFileContentTask = getFileContentTasks[commitId];
+					Task.Factory.ContinueWhenAll(new[] { getOldFileContentTask, getNewFileContentTask }, tasks =>
+					{
 						// diff the two versions
+						string oldFileContents = tasks[0].Result;
+						string newFileContents = tasks[1].Result;
 						var diff = new diff_match_patch();
 						var diffs = diff.diff_main(oldFileContents, newFileContents);
 						diff.diff_cleanupSemantic(diffs);
@@ -101,16 +113,16 @@ namespace GitBlame.Models
 								}
 							}
 						}
-					}
-					else
-					{
-						// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
-						foreach (Block block in group)
-							for (int lineNumber = block.StartLine; lineNumber < block.StartLine + block.LineCount; lineNumber++)
-								blameResult.SetLine(lineNumber, new Line(lineNumber, currentLines[lineNumber - 1], true));
-					}
+					});
 				}
-			});
+				else
+				{
+					// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
+					foreach (Block block in group)
+						for (int lineNumber = block.StartLine; lineNumber < block.StartLine + block.LineCount; lineNumber++)
+							blameResult.SetLine(lineNumber, new Line(lineNumber, currentLines[lineNumber - 1], true));
+				}
+			}
 
 			return blameResult;
 		}
