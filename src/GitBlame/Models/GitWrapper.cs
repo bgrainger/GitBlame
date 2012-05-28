@@ -43,20 +43,22 @@ namespace GitBlame.Models
 			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
 
 			string repositoryPath = GetRepositoryPath(directory);
-			string workingDirectoryPath = Path.GetDirectoryName(repositoryPath);
-			string relativePath = filePath.Substring(workingDirectoryPath.Length + 1);
 
 			// start a task to get the content of this file from each commit in its history
 			var getFileContentTasks = blocks
-				.SelectMany(b => new[] { b.Commit.Id, b.Commit.PreviousCommitId })
+				.SelectMany(b => new[]
+					{
+						new { CommitId = b.Commit.Id, b.FileName },
+						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
+					})
 				.Distinct()
-				.Where(id => id != null)
+				.Where(c => c.CommitId != null)
 				.ToDictionary(
-					id => id,
-					id => Task.Factory.StartNew(() =>
+					c => c.CommitId,
+					c => Task.Factory.StartNew(() =>
 					{
 						using (var repo = new Repository(repositoryPath))
-							return GetFileContentAsUtf8(repo, id, relativePath);
+							return GetFileContentAsUtf8(repo, c.CommitId, c.FileName);
 					}));
 
 			// process the blocks for each unique commit

@@ -35,6 +35,11 @@ namespace GitBlame.Models
 			get { return m_commit; }
 		}
 
+		public string FileName
+		{
+			get { return m_fileName; }
+		}
+
 		readonly int m_startLine;
 		readonly int m_lineCount;
 		readonly Commit m_commit;
