@@ -42,9 +42,10 @@ namespace GitBlame.Models
 
 			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
 
-			string repositoryPath = GetRepositoryPath(directory);
+			const string uncommittedChangesCommitId = "0000000000000000000000000000000000000000";
 
 			// start a task to get the content of this file from each commit in its history
+			string repositoryPath = GetRepositoryPath(directory);
 			var getFileContentTasks = blocks
 				.SelectMany(b => new[]
 					{
@@ -52,7 +53,7 @@ namespace GitBlame.Models
 						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
 					})
 				.Distinct()
-				.Where(c => c.CommitId != null)
+				.Where(c => c.CommitId != null && c.CommitId != uncommittedChangesCommitId)
 				.ToDictionary(
 					c => c.CommitId,
 					c => Task.Factory.StartNew(() =>
@@ -60,6 +61,9 @@ namespace GitBlame.Models
 						using (var repo = new Repository(repositoryPath))
 							return GetFileContentAsUtf8(repo, c.CommitId, c.FileName);
 					}));
+
+			// add a task that returns the current version of the file
+			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Factory.StartNew(() => string.Join("\n", currentLines)));
 
 			// process the blocks for each unique commit
 			foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
