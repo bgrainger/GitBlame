@@ -31,6 +31,7 @@ namespace GitBlame
 			m_newLineBrush.Freeze();
 			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
 			m_changedTextBrush.Freeze();
+			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
 		}
 
 		internal void SetBlameResult(BlameResult blame)
@@ -232,12 +233,18 @@ namespace GitBlame
 		private void BlameResult_PropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
 			m_layout = m_layout.Refresh();
-			RedrawSoon(DispatcherPriority.ApplicationIdle);
+			RedrawSoon();
 		}
 
-		private void RedrawSoon(DispatcherPriority priority = DispatcherPriority.Render)
+		private void RedrawSoon()
 		{
-			Dispatcher.BeginInvoke(priority, new SendOrPostCallback(delegate { Render(); }), null);
+			m_redrawTimer.Start();
+		}
+
+		private void OnRedrawTimerTick(object sender, EventArgs args)
+		{
+			m_redrawTimer.Stop();
+			Render();
 		}
 
 		private FormattedText CreateFormattedText(string text, Typeface typeface)
@@ -383,6 +390,7 @@ namespace GitBlame
 		readonly Dictionary<int, Brush> m_personBrush;
 		readonly Dictionary<string, SolidColorBrush> m_commitBrush;
 		readonly Dictionary<string, byte> m_commitAlpha;
+		readonly DispatcherTimer m_redrawTimer;
 		BlameResult m_blame;
 		BlameLayout m_layout;
 		int m_lineCount;
