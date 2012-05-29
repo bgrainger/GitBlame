@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -59,7 +58,25 @@ namespace GitBlame.Models
 					c => Task.Factory.StartNew(() =>
 					{
 						using (var repo = new Repository(repositoryPath))
-							return GetFileContentAsUtf8(repo, c.CommitId, c.FileName);
+						{
+							// look up commit in repo
+							var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(c.CommitId);
+
+							// save the commit message
+							Commit commit;
+							if (commits.TryGetValue(c.CommitId, out commit))
+								commit.SetMessage(gitCommit.Message);
+
+							// get content from commit
+							var blob = (Blob) gitCommit.Tree[c.FileName].Target;
+							string content = blob.ContentAsUtf8();
+
+							// strip BOM (U+FEFF) if present
+							if (content.Length > 0 && content[0] == '\uFEFF')
+								content = content.Substring(1);
+
+							return content;
+						}
 					}));
 
 			// add a task that returns the current version of the file
@@ -304,20 +321,6 @@ namespace GitBlame.Models
 			while (directory != null);
 
 			throw new ApplicationException("Can't find .git directory for " + directory);
-		}
-
-		private static string GetFileContentAsUtf8(Repository repo, string commitId, string relativePath)
-		{
-			// get content from commit
-			var commit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
-			var blob = (Blob) commit.Tree[relativePath].Target;
-			string content = blob.ContentAsUtf8();
-
-			// strip BOM (U+FEFF) if present
-			if (content.Length > 0 && content[0] == '\uFEFF')
-				content = content.Substring(1);
-
-			return content;
 		}
 	}
 }

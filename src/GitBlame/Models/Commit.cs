@@ -65,6 +65,16 @@ namespace GitBlame.Models
 			get { return m_previousFileName; }
 		}
 
+		public string Message
+		{
+			get { return m_message; }
+		}
+
+		public void SetMessage(string message)
+		{
+			m_message = message;
+		}
+
 		readonly string m_id;
 		readonly Person m_author;
 		readonly DateTimeOffset m_authorDate;
@@ -73,5 +83,6 @@ namespace GitBlame.Models
 		readonly string m_summary;
 		readonly string m_previousCommitId;
 		readonly string m_previousFileName;
+		string m_message;
 	}
 }
