@@ -40,47 +40,7 @@ namespace GitBlame.Models
 				.ToArray();
 
 			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
-
-			const string uncommittedChangesCommitId = "0000000000000000000000000000000000000000";
-
-			// start a task to get the content of this file from each commit in its history
-			string repositoryPath = GetRepositoryPath(directory);
-			var getFileContentTasks = blocks
-				.SelectMany(b => new[]
-					{
-						new { CommitId = b.Commit.Id, b.FileName },
-						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
-					})
-				.Distinct()
-				.Where(c => c.CommitId != null && c.CommitId != uncommittedChangesCommitId)
-				.ToDictionary(
-					c => c.CommitId,
-					c => Task.Factory.StartNew(() =>
-					{
-						using (var repo = new Repository(repositoryPath))
-						{
-							// look up commit in repo
-							var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(c.CommitId);
-
-							// save the commit message
-							Commit commit;
-							if (commits.TryGetValue(c.CommitId, out commit))
-								commit.SetMessage(gitCommit.Message);
-
-							// get content from commit
-							var blob = (Blob) gitCommit.Tree[c.FileName].Target;
-							string content = blob.ContentAsUtf8();
-
-							// strip BOM (U+FEFF) if present
-							if (content.Length > 0 && content[0] == '\uFEFF')
-								content = content.Substring(1);
-
-							return content;
-						}
-					}));
-
-			// add a task that returns the current version of the file
-			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Factory.StartNew(() => string.Join("\n", currentLines)));
+			Dictionary<string, Task<string>> getFileContentTasks = CreateGetFileContentTasks(directory, blocks, commits, currentLines);
 
 			// process the blocks for each unique commit
 			foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
@@ -191,6 +151,52 @@ namespace GitBlame.Models
 						blocks.Insert(~index, block);
 				}
 			}
+		}
+
+		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string directory, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
+		{
+			const string uncommittedChangesCommitId = "0000000000000000000000000000000000000000";
+
+			// start a task to get the content of this file from each commit in its history
+			string repositoryPath = GetRepositoryPath(directory);
+			var getFileContentTasks = blocks
+				.SelectMany(b => new[]
+					{
+						new { CommitId = b.Commit.Id, b.FileName },
+						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
+					})
+				.Distinct()
+				.Where(c => c.CommitId != null && c.CommitId != uncommittedChangesCommitId)
+				.ToDictionary(
+					c => c.CommitId,
+					c => Task.Factory.StartNew(() =>
+					{
+						using (var repo = new Repository(repositoryPath))
+						{
+							// look up commit in repo
+							var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(c.CommitId);
+
+							// save the commit message
+							Commit commit;
+							if (commits.TryGetValue(c.CommitId, out commit))
+								commit.SetMessage(gitCommit.Message);
+
+							// get content from commit
+							var blob = (Blob) gitCommit.Tree[c.FileName].Target;
+							string content = blob.ContentAsUtf8();
+
+							// strip BOM (U+FEFF) if present
+							if (content.Length > 0 && content[0] == '\uFEFF')
+								content = content.Substring(1);
+
+							return content;
+						}
+					}));
+
+			// add a task that returns the current version of the file
+			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Factory.StartNew(() => string.Join("\n", currentLines)));
+
+			return getFileContentTasks;
 		}
 
 		private static IEnumerable<Line> ParseDiffOutput(List<DiffMatchPatch.Diff> diffs)
