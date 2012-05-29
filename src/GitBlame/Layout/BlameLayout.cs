@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -309,6 +308,11 @@ namespace GitBlame.Layout
 			m_alpha = alpha;
 			m_authorIndex = authorIndex;
 			m_commit = commit;
+		}
+
+		public Commit RawCommit
+		{
+			get { return m_commit; }
 		}
 
 		public string CommitId

@@ -1,11 +1,11 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -91,10 +91,40 @@ namespace GitBlame
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
-			string hoverCommitId = GetCommitIdFromPoint(e.GetPosition(this));
+			Commit hoverCommit = GetCommitFromPoint(e.GetPosition(this));
+			string hoverCommitId = hoverCommit == null ? null : hoverCommit.Id;
+
+			if (m_lastHoverCommitId != hoverCommitId)
+			{
+				HideToolTip();
+
+				if (hoverCommitId != null)
+				{
+					m_lastHoverCommitId = hoverCommitId;
+					m_hoverTip = new ToolTip() { Content = hoverCommit, Placement = PlacementMode.Mouse };
+					m_hoverTip.IsOpen = true;
+				}
+			}
+
 			if (hoverCommitId == m_selectedCommitId)
 				hoverCommitId = null;
 			SetCommitColor(ref m_hoverCommitId, hoverCommitId, m_changedTextBrush.Color);
+		}
+
+		protected override void OnMouseLeave(MouseEventArgs e)
+		{
+			HideToolTip();
+			base.OnMouseLeave(e);
+		}
+
+		private void HideToolTip()
+		{
+			if (m_hoverTip != null)
+			{
+				m_hoverTip.IsOpen = false;
+				m_hoverTip = null;
+				m_lastHoverCommitId = null;
+			}
 		}
 
 		protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -114,12 +144,18 @@ namespace GitBlame
 			commitId = newCommitId;
 		}
 
-		private string GetCommitIdFromPoint(Point point)
+		private Commit GetCommitFromPoint(Point point)
 		{
 			return m_layout == null ? null : m_layout.Blocks
 				.Where(b => b.CommitPosition.Contains(point))
-				.Select(b => b.CommitId)
+				.Select(b => b.RawCommit)
 				.FirstOrDefault();
+		}
+
+		private string GetCommitIdFromPoint(Point point)
+		{
+			Commit commit = GetCommitFromPoint(point);
+			return commit == null ? null : commit.Id;
 		}
 
 		protected override void OnScrollChanged()
@@ -399,5 +435,7 @@ namespace GitBlame
 		double m_emSize;
 		string m_hoverCommitId;
 		string m_selectedCommitId;
+		string m_lastHoverCommitId;
+		ToolTip m_hoverTip;
 	}
 }

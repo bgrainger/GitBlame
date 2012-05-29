@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace GitBlame.Models
 {
@@ -24,6 +23,11 @@ namespace GitBlame.Models
 		public string Id
 		{
 			get { return m_id; }
+		}
+
+		public string ShortId
+		{
+			get { return m_id.Substring(0, 16); }
 		}
 
 		public Person Author
