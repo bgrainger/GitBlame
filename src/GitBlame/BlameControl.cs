@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -32,6 +33,14 @@ namespace GitBlame
 			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
 			m_changedTextBrush.Freeze();
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
+
+			var mouseMove = Observable.FromEventPattern<MouseEventArgs>(this, "MouseMove");
+			var mouseOverCommits = mouseMove.Select(x => GetCommitFromPoint(x.EventArgs.GetPosition(this))).DistinctUntilChanged();
+			mouseOverCommits.ObserveOnDispatcher().Subscribe(MouseOverCommit);
+			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5)).ObserveOnDispatcher().Subscribe(ShowCommitTooltip);
+
+			var mouseLeave = Observable.FromEventPattern<MouseEventArgs>(this, "MouseLeave");
+			mouseLeave.ObserveOnDispatcher().Subscribe(_ => HideToolTip());
 		}
 
 		internal void SetBlameResult(BlameResult blame)
@@ -89,32 +98,27 @@ namespace GitBlame
 			get { return 1; }
 		}
 
-		protected override void OnMouseMove(MouseEventArgs e)
+		private void MouseOverCommit(Commit hoverCommit)
 		{
-			Commit hoverCommit = GetCommitFromPoint(e.GetPosition(this));
+			HideToolTip();
+
 			string hoverCommitId = hoverCommit == null ? null : hoverCommit.Id;
-
-			if (m_lastHoverCommitId != hoverCommitId)
-			{
-				HideToolTip();
-
-				if (hoverCommitId != null)
-				{
-					m_lastHoverCommitId = hoverCommitId;
-					m_hoverTip = new ToolTip() { Content = hoverCommit, Placement = PlacementMode.Mouse };
-					m_hoverTip.IsOpen = true;
-				}
-			}
-
 			if (hoverCommitId == m_selectedCommitId)
 				hoverCommitId = null;
 			SetCommitColor(ref m_hoverCommitId, hoverCommitId, m_changedTextBrush.Color);
 		}
 
-		protected override void OnMouseLeave(MouseEventArgs e)
+		private void ShowCommitTooltip(Commit commit)
 		{
-			HideToolTip();
-			base.OnMouseLeave(e);
+			if (commit != null)
+			{
+				m_hoverTip = new ToolTip
+				{
+					Content = commit,
+					Placement = PlacementMode.Mouse,
+					IsOpen = true
+				};
+			}
 		}
 
 		private void HideToolTip()
@@ -123,7 +127,6 @@ namespace GitBlame
 			{
 				m_hoverTip.IsOpen = false;
 				m_hoverTip = null;
-				m_lastHoverCommitId = null;
 			}
 		}
 
@@ -435,7 +438,6 @@ namespace GitBlame
 		double m_emSize;
 		string m_hoverCommitId;
 		string m_selectedCommitId;
-		string m_lastHoverCommitId;
 		ToolTip m_hoverTip;
 	}
 }
