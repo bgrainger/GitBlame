@@ -25,6 +25,12 @@ namespace GitBlame
 			m_visual = new DrawingVisual();
 			AddVisualChild(m_visual);
 
+			m_blamePreviousMenuItem = new MenuItem { Header = "Blame previous", Command = Commands.BlamePreviousCommand, CommandTarget = this};
+			ContextMenu = new ContextMenu
+			{
+				Items = { m_blamePreviousMenuItem }
+			};
+
 			m_personBrush = new Dictionary<int, Brush>();
 			m_commitBrush = new Dictionary<string, SolidColorBrush>();
 			m_commitAlpha = new Dictionary<string, byte>();
@@ -134,6 +140,25 @@ namespace GitBlame
 		{
 			SetCommitColor(ref m_selectedCommitId, GetCommitIdFromPoint(e.GetPosition(this)), Color.FromRgb(79, 178, 255));
 			m_hoverCommitId = null;
+
+			base.OnMouseLeftButtonUp(e);
+		}
+
+		protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
+		{
+			Commit commit = GetCommitFromPoint(e.GetPosition(this));
+			if (commit != null)
+			{
+				m_blamePreviousMenuItem.CommandParameter = commit;
+				ContextMenu.IsOpen = true;
+			}
+			else
+			{
+				m_blamePreviousMenuItem.CommandParameter = null;
+			}
+
+			e.Handled = true;
+			base.OnMouseRightButtonUp(e);
 		}
 
 		private void SetCommitColor(ref string commitId, string newCommitId, Color color)
@@ -426,6 +451,7 @@ namespace GitBlame
 		};
 
 		readonly DrawingVisual m_visual;
+		readonly MenuItem m_blamePreviousMenuItem;
 		readonly Brush m_newLineBrush;
 		readonly SolidColorBrush m_changedTextBrush;
 		readonly Dictionary<int, Brush> m_personBrush;
