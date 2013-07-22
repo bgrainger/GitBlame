@@ -16,21 +16,43 @@ namespace GitBlame.Models
 	{
 		public static BlameResult GetBlameOutput(string filePath)
 		{
-		   // run "git blame"
-			string directory = Path.GetDirectoryName(filePath);
-			string fileName = Path.GetFileName(filePath);
-			ExternalProcess git = new ExternalProcess(GetGitPath(), directory);
-			var results = git.Run(new ProcessRunSettings("blame", "--incremental", "--encoding=utf-8", fileName));
+			string repoPath = GetRepositoryPath(filePath);
+			string fileName = filePath.Substring(Path.GetDirectoryName(repoPath).Length + 1);
+			string[] currentLines = File.ReadAllLines(filePath);
+			return GetBlameOutput(repoPath, fileName, null, currentLines);
+		}
+
+		public static BlameResult GetBlameOutput(string repoPath, string fileName, string blameCommitId)
+		{
+			List<string> lines = new List<string>();
+			using (StringReader reader = new StringReader(GetFileContent(repoPath, blameCommitId, fileName)))
+			{
+				string line = null;
+				while ((line = reader.ReadLine()) != null)
+					lines.Add(line);
+			}
+
+			return GetBlameOutput(repoPath, fileName, blameCommitId, lines.ToArray());
+		}
+
+		private static BlameResult GetBlameOutput(string repoPath, string fileName, string blameCommitId, string[] currentLines)
+		{
+			// run "git blame"
+			ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repoPath));
+			List<string> arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
+			if (blameCommitId != null)
+				arguments.Add(blameCommitId);
+			arguments.AddRange(new[] { "--", fileName });
+			var results = git.Run(new ProcessRunSettings(arguments.ToArray()));
 			if (results.ExitCode != 0)
 				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
 
 			// parse output
 			List<Block> blocks = new List<Block>();
 			Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
-			ParseBlameOutput(results.Output, directory, blocks, commits);
+			ParseBlameOutput(results.Output, blocks, commits);
 
 			// allocate a (1-based) array for all lines in the file
-			string[] currentLines = File.ReadAllLines(filePath);
 			int lineCount = blocks.Sum(b => b.LineCount);
 			Invariant.Assert(lineCount == currentLines.Length, "Unexpected number of lines in file.");
 
@@ -40,7 +62,7 @@ namespace GitBlame.Models
 				.ToArray();
 
 			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
-			Dictionary<string, Task<string>> getFileContentTasks = CreateGetFileContentTasks(directory, blocks, commits, currentLines);
+			Dictionary<string, Task<string>> getFileContentTasks = CreateGetFileContentTasks(repoPath, blocks, commits, currentLines);
 
 			// process the blocks for each unique commit
 			foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
@@ -110,7 +132,7 @@ namespace GitBlame.Models
 			return blameResult;
 		}
 
-		private static void ParseBlameOutput(string output, string directory, List<Block> blocks, Dictionary<string, Commit> commits)
+		private static void ParseBlameOutput(string output, List<Block> blocks, Dictionary<string, Commit> commits)
 		{
 			// read entire output of "git blame"
 			using (StringReader reader = new StringReader(output))
@@ -153,12 +175,11 @@ namespace GitBlame.Models
 			}
 		}
 
-		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string directory, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
+		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string repositoryPath, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
 		{
 			const string uncommittedChangesCommitId = "0000000000000000000000000000000000000000";
 
 			// start a task to get the content of this file from each commit in its history
-			string repositoryPath = GetRepositoryPath(directory);
 			var getFileContentTasks = blocks
 				.SelectMany(b => new[]
 					{
@@ -181,15 +202,7 @@ namespace GitBlame.Models
 							if (commits.TryGetValue(c.CommitId, out commit))
 								commit.SetMessage(gitCommit.Message);
 
-							// get content from commit
-							var blob = (Blob) gitCommit.Tree[c.FileName].Target;
-							string content = blob.ContentAsUtf8();
-
-							// strip BOM (U+FEFF) if present
-							if (content.Length > 0 && content[0] == '\uFEFF')
-								content = content.Substring(1);
-
-							return content;
+							return GetFileContent(gitCommit, c.FileName);
 						}
 					}));
 
@@ -197,6 +210,28 @@ namespace GitBlame.Models
 			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
 
 			return getFileContentTasks;
+		}
+
+		private static string GetFileContent(string repositoryPath, string commitId, string fileName)
+		{
+			using (var repo = new Repository(repositoryPath))
+			{
+				var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
+				return GetFileContent(gitCommit, fileName);
+			}
+		}
+
+		private static string GetFileContent(LibGit2Sharp.Commit commit, string fileName)
+		{
+			// get content from commit
+			var blob = (Blob) commit.Tree[fileName].Target;
+			string content = blob.ContentAsUtf8();
+
+			// strip BOM (U+FEFF) if present
+			if (content.Length > 0 && content[0] == '\uFEFF')
+				content = content.Substring(1);
+
+			return content;
 		}
 
 		private static IEnumerable<Line> ParseDiffOutput(List<DiffMatchPatch.Diff> diffs)
@@ -314,7 +349,7 @@ namespace GitBlame.Models
 			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
 
-		private static string GetRepositoryPath(string directory)
+		public static string GetRepositoryPath(string directory)
 		{
 			do
 			{
