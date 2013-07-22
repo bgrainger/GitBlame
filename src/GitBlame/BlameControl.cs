@@ -40,13 +40,24 @@ namespace GitBlame
 			m_changedTextBrush.Freeze();
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
 
-			var mouseMove = Observable.FromEventPattern<MouseEventArgs>(this, "MouseMove");
-			var mouseOverCommits = mouseMove.Select(x => GetCommitFromPoint(x.EventArgs.GetPosition(this))).DistinctUntilChanged();
-			mouseOverCommits.ObserveOnDispatcher().Subscribe(MouseOverCommit);
-			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5)).ObserveOnDispatcher().Subscribe(ShowCommitTooltip);
+			// can only show the tooltip if the mouse is over the control, and the context menu isn't open
+			var isMouseOver = this.ToObservableWithInitialValue<bool>(IsMouseOverProperty);
+			var isContextMenuOpen = ContextMenu.ToObservableWithInitialValue<bool>(ContextMenu.IsOpenProperty);
+			var canShowTooltip = Observable.CombineLatest(isMouseOver, isContextMenuOpen, (mo, cm) => mo && !cm);
+			canShowTooltip.Where(x => !x).ObserveOnDispatcher().Subscribe(_ => HideToolTip());
 
-			var mouseLeave = Observable.FromEventPattern<MouseEventArgs>(this, "MouseLeave");
-			mouseLeave.ObserveOnDispatcher().Subscribe(_ => HideToolTip());
+			var mouseMove = Observable.FromEventPattern<MouseEventArgs>(this, "MouseMove");
+			var mouseOverCommits = mouseMove
+				.Select(x => x.EventArgs.GetPosition(this))
+				.Select(GetCommitFromPoint)
+				.DistinctUntilChanged();
+			mouseOverCommits.ObserveOnDispatcher().Subscribe(MouseOverCommit);
+			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5))
+				.CombineLatest(canShowTooltip, (l, r) => new { Commit = l, CanShowTooltip = r })
+				.Where(x => x.Commit != null && x.CanShowTooltip)
+				.Select(x => x.Commit)
+				.ObserveOnDispatcher()
+				.Subscribe(ShowCommitTooltip);
 		}
 
 		internal void SetBlameResult(BlameResult blame)
@@ -116,15 +127,12 @@ namespace GitBlame
 
 		private void ShowCommitTooltip(Commit commit)
 		{
-			if (commit != null)
+			m_hoverTip = new ToolTip
 			{
-				m_hoverTip = new ToolTip
-				{
-					Content = commit,
-					Placement = PlacementMode.Mouse,
-					IsOpen = true
-				};
-			}
+				Content = commit,
+				Placement = PlacementMode.Mouse,
+				IsOpen = true
+			};
 		}
 
 		private void HideToolTip()
