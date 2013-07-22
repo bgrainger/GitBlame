@@ -65,7 +65,7 @@ namespace GitBlame
 				.Subscribe(ShowCommitTooltip);
 		}
 
-		internal void SetBlameResult(BlameResult blame)
+		internal void SetBlameResult(BlameResult blame, int topLineNumber = 1)
 		{
 			if (m_blame != null)
 				m_blame.PropertyChanged -= BlameResult_PropertyChanged;
@@ -84,7 +84,7 @@ namespace GitBlame
 			m_commitAlpha.Clear();
 			CreateBrushesForAuthors(m_layout.AuthorCount);
 
-			SetVerticalScrollInfo(m_lineCount + 1, null, 0);
+			SetVerticalScrollInfo(m_lineCount + 1, null, topLineNumber - 1);
 			RedrawSoon();
 		}
 
@@ -160,10 +160,12 @@ namespace GitBlame
 		protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
 		{
 			Point position = e.GetPosition(this);
-			Commit commit = GetCommitFromPoint(position);
-			if (commit != null)
+
+			DisplayBlock block = m_layout == null ? null : m_layout.Blocks.FirstOrDefault(x => x.CommitPosition.Contains(position));
+			if (block != null)
 			{
-				m_blamePreviousMenuItem.CommandParameter = commit;
+				Commit commit = block.RawCommit;
+				m_blamePreviousMenuItem.CommandParameter = new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, 1);
 				m_viewAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
 				ContextMenu.IsOpen = true;
 			}

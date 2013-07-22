@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using GitBlame.Layout;
 using GitBlame.Models;
 using Microsoft.Win32;
 
@@ -48,19 +49,18 @@ namespace GitBlame
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
 			string filePath = ((App) Application.Current).FilePath;
-			Commit commit = (Commit) e.Parameter;
-			if (filePath != null && commit.PreviousCommitId != null)
+			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
+			if (filePath != null && blamePrevious != null)
 			{
 				string repoPath = GitWrapper.GetRepositoryPath(filePath);
-				BlameResult blame = GitWrapper.GetBlameOutput(repoPath, commit.PreviousFileName, commit.PreviousCommitId);
-				Blame.SetBlameResult(blame);
+				BlameResult blame = GitWrapper.GetBlameOutput(repoPath, blamePrevious.FileName, blamePrevious.CommitId);
+				Blame.SetBlameResult(blame, blamePrevious.LineNumber);
 			}				
 		}
 
 		private void OnCanBlamePrevious(object sender, CanExecuteRoutedEventArgs e)
 		{
-			Commit commit = e.Parameter as Commit;
-			e.CanExecute = commit != null && commit.PreviousCommitId != null;
+			e.CanExecute = e.Parameter is BlamePreviousModel;
 			e.Handled = true;
 		}
 

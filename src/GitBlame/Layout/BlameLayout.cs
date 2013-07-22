@@ -213,7 +213,7 @@ namespace GitBlame.Layout
 					summaryPosition.Height = Math.Min(summaryPosition.Height - m_lineHeight, m_renderSize.Height);
 				}
 
-				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex[block.Commit.Author], block.Commit));
+				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex[block.Commit.Author], block));
 
 				blockIndex++;
 				lineCount += linesFromThisBlock;
@@ -315,14 +315,20 @@ namespace GitBlame.Layout
 
 	internal sealed class DisplayBlock
 	{
-		public DisplayBlock(Rect authorPosition, Rect commitPosition, Rect summaryPosition, double alpha, int authorIndex, Commit commit)
+		public DisplayBlock(Rect authorPosition, Rect commitPosition, Rect summaryPosition, double alpha, int authorIndex, Block block)
 		{
 			m_authorPosition = authorPosition;
 			m_commitPosition = commitPosition;
 			m_summaryPosition = summaryPosition;
 			m_alpha = alpha;
 			m_authorIndex = authorIndex;
-			m_commit = commit;
+			m_block = block;
+			m_commit = block.Commit;
+		}
+
+		public Block RawBlock
+		{
+			get { return m_block; }
 		}
 
 		public Commit RawCommit
@@ -414,6 +420,7 @@ namespace GitBlame.Layout
 		readonly Rect m_summaryPosition;
 		readonly double m_alpha;
 		readonly int m_authorIndex;
+		readonly Block m_block;
 		readonly Commit m_commit;
 	}
 

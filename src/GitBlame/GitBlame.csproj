@@ -92,6 +92,7 @@
     <Compile Include="Models\Line.cs" />
     <Compile Include="Models\LinePart.cs" />
     <Compile Include="Models\LinePartStatus.cs" />
+    <Compile Include="Models\BlamePreviousModel.cs" />
     <Compile Include="Utility\DependencyPropertyUtility.cs" />
     <Compile Include="Utility\Invariant.cs" />
     <Compile Include="Utility\ArrayExtensions.cs" />
