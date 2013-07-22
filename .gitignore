@@ -2,6 +2,7 @@
 bin/
 build/
 obj/
+packages/
 ipch/
 
 # ignore user-specific options/cache files

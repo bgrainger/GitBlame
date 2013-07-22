@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitBlame", "src\GitBlame\GitBlame.csproj", "{5060BAD3-1099-457C-A44E-63C73786DA53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibGit2Sharp", "ext\libgit2sharp\LibGit2Sharp\LibGit2Sharp.csproj", "{EE6ED99F-CB12-4683-B055-D28FC7357A34}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{FB906C40-BAF3-46B1-9770-3F80EBA2204B}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
@@ -22,10 +20,6 @@ Global
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Debug|x86.Build.0 = Debug|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|x86.ActiveCfg = Release|x86
 		{5060BAD3-1099-457C-A44E-63C73786DA53}.Release|x86.Build.0 = Release|x86
-		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Debug|x86.Build.0 = Debug|Any CPU
-		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Release|x86.ActiveCfg = Release|Any CPU
-		{EE6ED99F-CB12-4683-B055-D28FC7357A34}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
