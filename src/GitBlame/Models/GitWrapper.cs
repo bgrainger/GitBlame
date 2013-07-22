@@ -169,7 +169,7 @@ namespace GitBlame.Models
 				.Where(c => c.CommitId != null && c.CommitId != uncommittedChangesCommitId)
 				.ToDictionary(
 					c => c.CommitId,
-					c => Task.Factory.StartNew(() =>
+					c => Task.Run(() =>
 					{
 						using (var repo = new Repository(repositoryPath))
 						{
@@ -194,7 +194,7 @@ namespace GitBlame.Models
 					}));
 
 			// add a task that returns the current version of the file
-			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Factory.StartNew(() => string.Join("\n", currentLines)));
+			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
 
 			return getFileContentTasks;
 		}
