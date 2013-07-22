@@ -22,112 +22,130 @@ namespace GitBlame.Models
 			return GetBlameOutput(repoPath, fileName, null, currentLines);
 		}
 
-		public static BlameResult GetBlameOutput(string repoPath, string fileName, string blameCommitId)
+		public static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId)
 		{
 			List<string> lines = new List<string>();
-			using (StringReader reader = new StringReader(GetFileContent(repoPath, blameCommitId, fileName)))
+			using (StringReader reader = new StringReader(GetFileContent(repositoryPath, blameCommitId, fileName)))
 			{
 				string line = null;
 				while ((line = reader.ReadLine()) != null)
 					lines.Add(line);
 			}
 
-			return GetBlameOutput(repoPath, fileName, blameCommitId, lines.ToArray());
+			return GetBlameOutput(repositoryPath, fileName, blameCommitId, lines.ToArray());
 		}
 
-		private static BlameResult GetBlameOutput(string repoPath, string fileName, string blameCommitId, string[] currentLines)
+		private static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId, string[] currentLines)
 		{
-			// run "git blame"
-			ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repoPath));
-			List<string> arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
-			if (blameCommitId != null)
-				arguments.Add(blameCommitId);
-			arguments.AddRange(new[] { "--", fileName });
-			var results = git.Run(new ProcessRunSettings(arguments.ToArray()));
-			if (results.ExitCode != 0)
-				throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
-
-			// parse output
-			List<Block> blocks = new List<Block>();
-			Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
-			ParseBlameOutput(results.Output, blocks, commits);
-
-			// allocate a (1-based) array for all lines in the file
-			int lineCount = blocks.Sum(b => b.LineCount);
-			Invariant.Assert(lineCount == currentLines.Length, "Unexpected number of lines in file.");
-
-			// initialize all lines from current version
-			Line[] lines = currentLines
-				.Select((l, n) => new Line(n + 1, l, false))
-				.ToArray();
-
-			BlameResult blameResult = new BlameResult(blocks.AsReadOnly(), lines, commits);
-			Dictionary<string, Task<string>> getFileContentTasks = CreateGetFileContentTasks(repoPath, blocks, commits, currentLines);
-
-			// process the blocks for each unique commit
-			foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
+			BlameResult blameResult;
+			using (var repo = new Repository(repositoryPath))
 			{
-				// check if this commit modifies a previous one
-				var group = groupLoopVariable;
-				Commit commit = group.Key;
-				string commitId = commit.Id;
-				string previousCommitId = commit.PreviousCommitId;
+				var gitCommit = repo.Head.Tip;
+				var commit = new Commit(gitCommit.Sha,
+					new Person(gitCommit.Author.Name, gitCommit.Author.Email), gitCommit.Author.When,
+					new Person(gitCommit.Committer.Name, gitCommit.Committer.Email), gitCommit.Committer.When, gitCommit.MessageShort,
+					null, null);
 
-				if (previousCommitId != null)
+				// create a fake blame result that assigns all the code to the HEAD revision
+				blameResult = new BlameResult(new[] { new Block(1, currentLines.Length, commit, fileName, 1) }.AsReadOnly(),
+					currentLines.Select((l, n) => new Line(n + 1, l, true)).ToList(),
+					new Dictionary<string, Commit> { { commit.Id, commit } });
+			}
+
+			Task.Run(() =>
+			{
+				// run "git blame"
+				ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
+				List<string> arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
+				if (blameCommitId != null)
+					arguments.Add(blameCommitId);
+				arguments.AddRange(new[] { "--", fileName });
+				var results = git.Run(new ProcessRunSettings(arguments.ToArray()));
+				if (results.ExitCode != 0)
+					throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
+
+				// parse output
+				List<Block> blocks = new List<Block>();
+				Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
+				ParseBlameOutput(results.Output, blocks, commits);
+
+				// allocate a (1-based) array for all lines in the file
+				int lineCount = blocks.Sum(b => b.LineCount);
+				Invariant.Assert(lineCount == currentLines.Length, "Unexpected number of lines in file.");
+
+				// initialize all lines from current version
+				Line[] lines = currentLines
+					.Select((l, n) => new Line(n + 1, l, false))
+					.ToArray();
+
+				blameResult.SetData(blocks, lines, commits);
+				Dictionary<string, Task<string>> getFileContentTasks = CreateGetFileContentTasks(repositoryPath, blocks, commits, currentLines);
+
+				// process the blocks for each unique commit
+				foreach (var groupLoopVariable in blocks.OrderBy(b => b.StartLine).GroupBy(b => b.Commit))
 				{
-					// diff the old and new file contents when they become available
-					Task<string> getOldFileContentTask = getFileContentTasks[previousCommitId];
-					Task<string> getNewFileContentTask = getFileContentTasks[commitId];
-					Task.Factory.ContinueWhenAll(new[] { getOldFileContentTask, getNewFileContentTask }, tasks =>
+					// check if this commit modifies a previous one
+					var group = groupLoopVariable;
+					Commit commit = group.Key;
+					string commitId = commit.Id;
+					string previousCommitId = commit.PreviousCommitId;
+
+					if (previousCommitId != null)
 					{
-						// diff the two versions
-						string oldFileContents = tasks[0].Result;
-						string newFileContents = tasks[1].Result;
-						var diff = new diff_match_patch();
-						var diffs = diff.diff_main(oldFileContents, newFileContents);
-						diff.diff_cleanupSemantic(diffs);
-
-						// process all the lines in the diff output, matching them to blocks
-						using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(diffs).GetEnumerator())
+						// diff the old and new file contents when they become available
+						Task<string> getOldFileContentTask = getFileContentTasks[previousCommitId];
+						Task<string> getNewFileContentTask = getFileContentTasks[commitId];
+						Task.Factory.ContinueWhenAll(new[] { getOldFileContentTask, getNewFileContentTask }, tasks =>
 						{
-							// move to first line (which is expected to always be present)
-							Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
-							Line line = lineEnumerator.Current;
+							// diff the two versions
+							string oldFileContents = tasks[0].Result;
+							string newFileContents = tasks[1].Result;
+							var diff = new diff_match_patch();
+							var diffs = diff.diff_main(oldFileContents, newFileContents);
+							diff.diff_cleanupSemantic(diffs);
 
-							// process all the blocks, finding the corresponding lines from the diff for each one
-							foreach (Block block in group)
+							// process all the lines in the diff output, matching them to blocks
+							using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(diffs).GetEnumerator())
 							{
-								// skip all lines that occurred before the start of this block
-								while (line.LineNumber < block.OriginalStartLine)
-								{
-									Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
-									line = lineEnumerator.Current;
-								}
+								// move to first line (which is expected to always be present)
+								Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
+								Line line = lineEnumerator.Current;
 
-								// process all lines in the current block
-								while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+								// process all the blocks, finding the corresponding lines from the diff for each one
+								foreach (Block block in group)
 								{
-									// assign this line to the correct index in the blamed version of the file
-									blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
-
-									// move to the next line (if available)
-									if (lineEnumerator.MoveNext())
+									// skip all lines that occurred before the start of this block
+									while (line.LineNumber < block.OriginalStartLine)
+									{
+										Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
 										line = lineEnumerator.Current;
-									else
-										break;
+									}
+
+									// process all lines in the current block
+									while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+									{
+										// assign this line to the correct index in the blamed version of the file
+										blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
+
+										// move to the next line (if available)
+										if (lineEnumerator.MoveNext())
+											line = lineEnumerator.Current;
+										else
+											break;
+									}
 								}
 							}
-						}
-					});
+						});
+					}
+					else
+					{
+						// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
+						foreach (Block block in group)
+							for (int lineNumber = block.StartLine; lineNumber < block.StartLine + block.LineCount; lineNumber++)
+								blameResult.SetLine(lineNumber, new Line(lineNumber, currentLines[lineNumber - 1], true));
+					}
 				}
-				else
-				{
-					// this is the initial commit (but has not been modified since); grab its lines from the current version of the file
-					foreach (Block block in group)
-						for (int lineNumber = block.StartLine; lineNumber < block.StartLine + block.LineCount; lineNumber++)
-							blameResult.SetLine(lineNumber, new Line(lineNumber, currentLines[lineNumber - 1], true));
-				}
-			}
+			});
 
 			return blameResult;
 		}

@@ -296,7 +296,13 @@ namespace GitBlame
 
 		private void BlameResult_PropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
-			m_layout = m_layout.Refresh();
+			bool fullRefresh = e.PropertyName == null;
+			m_layout = m_layout.Refresh(fullRefresh);
+			if (fullRefresh)
+			{
+				m_personBrush.Clear();
+				CreateBrushesForAuthors(m_layout.AuthorCount);
+			}
 			RedrawSoon();
 		}
 

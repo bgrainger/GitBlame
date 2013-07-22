@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -18,6 +17,7 @@ namespace GitBlame.Models
 			m_lines = lines;
 			m_linesReadOnly = m_lines.AsReadOnly();
 			m_commits = commits;
+			m_commitsReadOnly = m_commits.Values.ToList().AsReadOnly();
 		}
 
 		public ReadOnlyCollection<Block> Blocks
@@ -27,10 +27,7 @@ namespace GitBlame.Models
 
 		public ReadOnlyCollection<Commit> Commits
 		{
-			get
-			{
-				return new List<Commit>(m_commits.Values).AsReadOnly();
-			}
+			get { return m_commitsReadOnly; }
 		}
 
 		public ReadOnlyCollection<Line> Lines
@@ -40,6 +37,17 @@ namespace GitBlame.Models
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
+		internal void SetData(IList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
+		{
+			m_blocks = blocks.AsReadOnly();
+			m_lines = lines;
+			m_linesReadOnly = lines.AsReadOnly();
+			m_commits = commits;
+			m_commitsReadOnly = m_commits.Values.ToList().AsReadOnly();
+
+			RaisePropertyChanged(null);
+		}
+
 		internal void SetLine(int lineNumber, Line line)
 		{
 			var existingLineText = string.Join("", m_lines[lineNumber - 1].Parts.Select(p => p.Text));
@@ -48,14 +56,20 @@ namespace GitBlame.Models
 
 			m_lines[lineNumber - 1] = line;
 
-			PropertyChangedEventHandler handler = PropertyChanged;
-			if (handler != null)
-				handler(this, new PropertyChangedEventArgs("Lines"));
+			RaisePropertyChanged("Lines");
 		}
 
-		readonly ReadOnlyCollection<Block> m_blocks;
-		readonly IList<Line> m_lines;
-		readonly ReadOnlyCollection<Line> m_linesReadOnly;
-		readonly Dictionary<string, Commit> m_commits;
+		private void RaisePropertyChanged(string propertyName)
+		{
+			PropertyChangedEventHandler handler = PropertyChanged;
+			if (handler != null)
+				handler(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		ReadOnlyCollection<Block> m_blocks;
+		IList<Line> m_lines;
+		ReadOnlyCollection<Line> m_linesReadOnly;
+		Dictionary<string, Commit> m_commits;
+		ReadOnlyCollection<Commit> m_commitsReadOnly;
 	}
 }

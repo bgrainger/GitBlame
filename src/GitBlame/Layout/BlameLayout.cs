@@ -25,16 +25,11 @@ namespace GitBlame.Layout
 		{
 			// get basic information from "blame" output
 			m_blame = blame;
-			m_authorIndex = m_blame.Commits
-				.GroupBy(c => c.Author)
-				.OrderByDescending(g => g.Count())
-				.Select((g, n) => new KeyValuePair<Person, int>(g.Key, n))
-				.ToDictionary();
+			m_authorIndex = GetBlameAuthors(m_blame);
 
 			// track commit age (for fading out the blocks for each commit)
-			m_oldestCommit = blame.Commits.Min(c => c.AuthorDate);
-			DateTimeOffset newestCommit = blame.Commits.Max(c => c.AuthorDate);
-			m_dateScale = 0.65 / (newestCommit - m_oldestCommit).TotalDays;
+			m_oldestCommit = GetOldestCommit(m_blame);
+			m_dateScale = GetDateScale(m_blame, m_oldestCommit);
 
 			// set up default column widths
 			m_columnWidths = new double[] { 210, 10, 0, 10, 5, 0 };
@@ -116,9 +111,9 @@ namespace GitBlame.Layout
 			get { return m_columnWidths.Sum(); }
 		}
 
-		public BlameLayout Refresh()
+		public BlameLayout Refresh(bool fullRefresh = false)
 		{
-			return new BlameLayout(this);
+			return new BlameLayout(this, fullRefresh: fullRefresh);
 		}
 
 		public BlameLayout WithCodeWidth(double width)
@@ -157,14 +152,11 @@ namespace GitBlame.Layout
 		}
 
 		private BlameLayout(BlameLayout layout, int? topLineNumber = null, Size? renderSize = null, double? lineHeight = null,
-			double? lineNumberColumnWidth = null, double? codeColumnWidth = null)
+			double? lineNumberColumnWidth = null, double? codeColumnWidth = null, bool fullRefresh = false)
 			: this()
 		{
 			// copy values from other BlameLayout
 			m_blame = layout.m_blame;
-			m_authorIndex = layout.m_authorIndex;
-			m_oldestCommit = layout.m_oldestCommit;
-			m_dateScale = layout.m_dateScale;
 			m_columnWidths = layout.m_columnWidths;
 
 			// copy or replace values from other BlameLayout
@@ -173,6 +165,9 @@ namespace GitBlame.Layout
 			m_lineHeight = lineHeight ?? layout.m_lineHeight;
 			m_columnWidths[c_lineNumberColumnIndex] = lineNumberColumnWidth ?? m_columnWidths[c_lineNumberColumnIndex];
 			m_columnWidths[c_codeColumnIndex] = codeColumnWidth ?? m_columnWidths[c_codeColumnIndex];
+			m_authorIndex = fullRefresh ? GetBlameAuthors(m_blame) : layout.m_authorIndex;
+			m_oldestCommit = fullRefresh ? GetOldestCommit(m_blame) : layout.m_oldestCommit;
+			m_dateScale = fullRefresh ? GetDateScale(m_blame, m_oldestCommit) : layout.m_dateScale;
 
 			// calculate new values
 			m_lineCount = (int) Math.Ceiling(m_renderSize.Height / m_lineHeight);
@@ -246,6 +241,26 @@ namespace GitBlame.Layout
 		private Column GetColumn(int index)
 		{
 			return new Column(m_columnWidths.Take(index).Sum(), m_columnWidths[index]);
+		}
+
+		private static Dictionary<Person, int> GetBlameAuthors(BlameResult blame)
+		{
+			return blame.Commits
+				.GroupBy(c => c.Author)
+				.OrderByDescending(g => g.Count())
+				.Select((g, n) => new KeyValuePair<Person, int>(g.Key, n))
+				.ToDictionary();
+		}
+
+		private static DateTimeOffset GetOldestCommit(BlameResult blame)
+		{
+			return blame.Commits.Min(c => c.AuthorDate);
+		}
+
+		private static double GetDateScale(BlameResult blame, DateTimeOffset oldestCommit)
+		{
+			DateTimeOffset newestCommit = blame.Commits.Max(c => c.AuthorDate);
+			return 0.65 / (newestCommit - oldestCommit).TotalDays;
 		}
 
 		const int c_commitColumnIndex = 0;
