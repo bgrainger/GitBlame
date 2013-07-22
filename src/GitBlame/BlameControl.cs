@@ -164,8 +164,13 @@ namespace GitBlame
 			DisplayBlock block = m_layout == null ? null : m_layout.Blocks.FirstOrDefault(x => x.CommitPosition.Contains(position));
 			if (block != null)
 			{
+				int lineIndex = (int) (position.Y / m_layout.LineHeight);
+				DisplayLine displayLine = m_layout.Lines[lineIndex];
+				Line line = m_blame.Lines[displayLine.LineNumber - 1];
+				int previousTopLine = Math.Max(1, line.OldLineNumber - lineIndex);
+
 				Commit commit = block.RawCommit;
-				m_blamePreviousMenuItem.CommandParameter = new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, 1);
+				m_blamePreviousMenuItem.CommandParameter = new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
 				m_viewAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
 				ContextMenu.IsOpen = true;
 			}

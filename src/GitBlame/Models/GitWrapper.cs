@@ -271,53 +271,64 @@ namespace GitBlame.Models
 		private static IEnumerable<Line> ParseDiffOutput(List<DiffMatchPatch.Diff> diffs)
 		{
 			int lineNumber = 1;
+			int firstOldLineNumber = 1, lastOldLineNumber = 1;
 			StringBuilder currentPart = new StringBuilder();
 			List<LinePart> currentParts = new List<LinePart>();
 			char lastChar = default(char);
 
 			// process all "equal" or "insert" diffs
-			foreach (var diff in diffs.Where(d => d.operation != Operation.DELETE))
+			foreach (var diff in diffs)
 			{
-				// walk the text, breaking it into lines
-				foreach (char ch in diff.text)
+				if (diff.operation == Operation.DELETE)
 				{
-					if ((ch == '\r' || ch == '\n'))
-					{
-						// treat "\r\n" as one newline
-						if (!(lastChar == '\r' && ch == '\n'))
-						{
-							if (currentPart.Length != 0)
-								currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
-
-							// found another line
-							yield return new Line(lineNumber, currentParts.ToArray().AsReadOnly());
-
-							// reset for next line
-							currentPart.Length = 0;
-							currentParts.Clear();
-							lineNumber++;
-						}
-					}
-					else
-					{
-						// add this character to the current part
-						currentPart.Append(ch);
-					}
-
-					lastChar = ch;
+					lastOldLineNumber += diff.text.Count(x => x == '\n');
 				}
-
-				// handle any remaining text at the end of a diff
-				if (currentPart.Length != 0)
+				else
 				{
-					currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
-					currentPart.Length = 0;
+					// walk the text, breaking it into lines
+					foreach (char ch in diff.text)
+					{
+						if ((ch == '\r' || ch == '\n'))
+						{
+							// treat "\r\n" as one newline
+							if (!(lastChar == '\r' && ch == '\n'))
+							{
+								if (currentPart.Length != 0)
+									currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
+
+								// found another line
+								yield return new Line(lineNumber, firstOldLineNumber, currentParts.ToArray().AsReadOnly());
+
+								// reset for next line
+								currentPart.Length = 0;
+								currentParts.Clear();
+								if (diff.operation == Operation.EQUAL)
+									lastOldLineNumber++;
+								lineNumber++;
+								firstOldLineNumber = lastOldLineNumber;
+							}
+						}
+						else
+						{
+							// add this character to the current part
+							currentPart.Append(ch);
+						}
+
+						lastChar = ch;
+					}
+
+					// handle any remaining text at the end of a diff
+					if (currentPart.Length != 0)
+					{
+						currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
+						currentPart.Length = 0;
+					}
 				}
 			}
 
 			// handle any remaining text at the end of the file
 			if (currentParts.Count != 0)
-				yield return new Line(lineNumber, currentParts.ToArray().AsReadOnly());
+				yield return new Line(lineNumber, firstOldLineNumber, currentParts.ToArray().AsReadOnly());
 		}
 
 		// Reads known values from 'tagValues' to create a Commit object.
