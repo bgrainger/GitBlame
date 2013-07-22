@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using GitBlame.Models;
@@ -42,7 +45,7 @@ namespace GitBlame
 			}
 		}
 
-		void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
+		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
 			string filePath = ((App) Application.Current).FilePath;
 			Commit commit = (Commit) e.Parameter;
@@ -54,10 +57,31 @@ namespace GitBlame
 			}				
 		}
 
-		void OnCanBlamePrevious(object sender, CanExecuteRoutedEventArgs e)
+		private void OnCanBlamePrevious(object sender, CanExecuteRoutedEventArgs e)
 		{
 			Commit commit = e.Parameter as Commit;
 			e.CanExecute = commit != null && commit.PreviousCommitId != null;
+			e.Handled = true;
+		}
+
+		private void OnViewAtGitHub(object sender, ExecutedRoutedEventArgs e)
+		{
+			Uri uri = e.Parameter as Uri;
+			if (uri != null)
+			{
+				try
+				{
+					Process.Start(uri.AbsoluteUri);
+				}
+				catch (Win32Exception)
+				{
+				}
+			}
+		}
+
+		private void OnCanViewAtGitHub(object sender, CanExecuteRoutedEventArgs e)
+		{
+			e.CanExecute = e.Parameter is Uri;
 			e.Handled = true;
 		}
 	}

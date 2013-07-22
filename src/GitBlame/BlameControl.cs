@@ -25,10 +25,15 @@ namespace GitBlame
 			m_visual = new DrawingVisual();
 			AddVisualChild(m_visual);
 
-			m_blamePreviousMenuItem = new MenuItem { Header = "Blame previous", Command = Commands.BlamePreviousCommand, CommandTarget = this};
+			m_blamePreviousMenuItem = new MenuItem { Header = "Blame previous", Command = Commands.BlamePreviousCommand, CommandTarget = this };
+			m_viewAtGitHubMenuItem = new MenuItem { Header = "View at GitHub", Command = Commands.ViewAtGitHubCommand, CommandTarget = this };
 			ContextMenu = new ContextMenu
 			{
-				Items = { m_blamePreviousMenuItem }
+				Items =
+				{
+					m_blamePreviousMenuItem,
+					m_viewAtGitHubMenuItem
+				}
 			};
 
 			m_personBrush = new Dictionary<int, Brush>();
@@ -154,15 +159,18 @@ namespace GitBlame
 
 		protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
 		{
-			Commit commit = GetCommitFromPoint(e.GetPosition(this));
+			Point position = e.GetPosition(this);
+			Commit commit = GetCommitFromPoint(position);
 			if (commit != null)
 			{
 				m_blamePreviousMenuItem.CommandParameter = commit;
+				m_viewAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
 				ContextMenu.IsOpen = true;
 			}
 			else
 			{
 				m_blamePreviousMenuItem.CommandParameter = null;
+				m_viewAtGitHubMenuItem.CommandParameter = null;
 			}
 
 			e.Handled = true;
@@ -466,6 +474,7 @@ namespace GitBlame
 
 		readonly DrawingVisual m_visual;
 		readonly MenuItem m_blamePreviousMenuItem;
+		readonly MenuItem m_viewAtGitHubMenuItem;
 		readonly Brush m_newLineBrush;
 		readonly SolidColorBrush m_changedTextBrush;
 		readonly Dictionary<int, Brush> m_personBrush;

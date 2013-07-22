@@ -6,6 +6,7 @@
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
         <CommandBinding Command="{x:Static src:Commands.BlamePreviousCommand}" Executed="OnBlamePrevious" CanExecute="OnCanBlamePrevious" />
+        <CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
     </Window.CommandBindings>
     <Grid>
         <ScrollViewer CanContentScroll="true" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">

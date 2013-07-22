@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DiffMatchPatch;
 using GitBlame.Utility;
@@ -14,6 +15,8 @@ namespace GitBlame.Models
 {
 	internal sealed class GitWrapper
 	{
+		public const string UncommittedChangesCommitId = "0000000000000000000000000000000000000000";
+
 		public static BlameResult GetBlameOutput(string filePath)
 		{
 			string repoPath = GetRepositoryPath(filePath);
@@ -40,6 +43,21 @@ namespace GitBlame.Models
 			BlameResult blameResult;
 			using (var repo = new Repository(repositoryPath))
 			{
+				// try to determine if the remote URL is plausibly a github.com or GitHub Enterprise URL
+				Uri webRootUrl = repo.Network.Remotes.Select(x =>
+				{
+					Match m = Regex.Match(x.Url, @"^(git@(?'host'[^:]+):(?'user'[^/]+)/(?'repo'[^/]+)\.git|(git|https?)://(?'host'[^/]+)/(?'user'[^/]+)/(?'repo'[^/]+)\.git)$", RegexOptions.ExplicitCapture);
+					if (m.Success)
+					{
+						string host = m.Groups["host"].Value;
+						return new Uri(string.Format("http{0}://{1}/{2}/{3}/", host == "github.com" ? "s" : "", host, m.Groups["user"].Value, m.Groups["repo"].Value));
+					}
+					else
+					{
+						return null;
+					}
+				}).FirstOrDefault(x => x != null);
+
 				var gitCommit = repo.Head.Tip;
 				var commit = new Commit(gitCommit.Sha,
 					new Person(gitCommit.Author.Name, gitCommit.Author.Email), gitCommit.Author.When,
@@ -47,7 +65,7 @@ namespace GitBlame.Models
 					null, null);
 
 				// create a fake blame result that assigns all the code to the HEAD revision
-				blameResult = new BlameResult(new[] { new Block(1, currentLines.Length, commit, fileName, 1) }.AsReadOnly(),
+				blameResult = new BlameResult(webRootUrl, new[] { new Block(1, currentLines.Length, commit, fileName, 1) }.AsReadOnly(),
 					currentLines.Select((l, n) => new Line(n + 1, l, true)).ToList(),
 					new Dictionary<string, Commit> { { commit.Id, commit } });
 			}
@@ -195,8 +213,6 @@ namespace GitBlame.Models
 
 		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string repositoryPath, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
 		{
-			const string uncommittedChangesCommitId = "0000000000000000000000000000000000000000";
-
 			// start a task to get the content of this file from each commit in its history
 			var getFileContentTasks = blocks
 				.SelectMany(b => new[]
@@ -205,7 +221,7 @@ namespace GitBlame.Models
 						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
 					})
 				.Distinct()
-				.Where(c => c.CommitId != null && c.CommitId != uncommittedChangesCommitId)
+				.Where(c => c.CommitId != null && c.CommitId != UncommittedChangesCommitId)
 				.ToDictionary(
 					c => c.CommitId,
 					c => Task.Run(() =>
@@ -225,7 +241,7 @@ namespace GitBlame.Models
 					}));
 
 			// add a task that returns the current version of the file
-			getFileContentTasks.Add(uncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
+			getFileContentTasks.Add(UncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
 
 			return getFileContentTasks;
 		}

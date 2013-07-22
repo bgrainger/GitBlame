@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -11,13 +12,19 @@ namespace GitBlame.Models
 	/// </summary>
 	internal sealed class BlameResult : INotifyPropertyChanged
 	{
-		public BlameResult(ReadOnlyCollection<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
+		public BlameResult(Uri webRootUrl, ReadOnlyCollection<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
 		{
+			m_webRootUrl = webRootUrl;
 			m_blocks = blocks;
 			m_lines = lines;
 			m_linesReadOnly = m_lines.AsReadOnly();
 			m_commits = commits;
 			m_commitsReadOnly = m_commits.Values.ToList().AsReadOnly();
+		}
+
+		public Uri WebRootUrl
+		{
+			get { return m_webRootUrl; }
 		}
 
 		public ReadOnlyCollection<Block> Blocks
@@ -66,6 +73,7 @@ namespace GitBlame.Models
 				handler(this, new PropertyChangedEventArgs(propertyName));
 		}
 
+		readonly Uri m_webRootUrl;
 		ReadOnlyCollection<Block> m_blocks;
 		IList<Line> m_lines;
 		ReadOnlyCollection<Line> m_linesReadOnly;
