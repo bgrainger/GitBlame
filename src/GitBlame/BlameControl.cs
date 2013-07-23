@@ -67,15 +67,15 @@ namespace GitBlame
 
 		internal void SetBlameResult(BlameResult blame, int topLineNumber = 1)
 		{
-			if (m_blame != null)
-				m_blame.PropertyChanged -= BlameResult_PropertyChanged;
+			if (m_blameSubscription != null)
+				m_blameSubscription.Dispose();
 
 			double oldLineHeight = m_layout == null ? 1.0 : m_layout.LineHeight;
 
 			m_blame = blame;
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
-			m_blame.PropertyChanged += BlameResult_PropertyChanged;
+			m_blameSubscription = Observable.FromEventPattern<PropertyChangedEventArgs>(m_blame, "PropertyChanged").ObserveOnDispatcher().Subscribe(x => OnBlameResultPropertyChanged(x.EventArgs));
 
 			m_hoverCommitId = null;
 			m_selectedCommitId = null;
@@ -318,7 +318,7 @@ namespace GitBlame
 			}
 		}
 
-		private void BlameResult_PropertyChanged(object sender, PropertyChangedEventArgs e)
+		private void OnBlameResultPropertyChanged(PropertyChangedEventArgs e)
 		{
 			bool fullRefresh = e.PropertyName == null;
 			m_layout = m_layout.Refresh(fullRefresh);
@@ -490,6 +490,7 @@ namespace GitBlame
 		readonly Dictionary<string, byte> m_commitAlpha;
 		readonly DispatcherTimer m_redrawTimer;
 		BlameResult m_blame;
+		IDisposable m_blameSubscription;
 		BlameLayout m_layout;
 		int m_lineCount;
 		double m_emSize;
