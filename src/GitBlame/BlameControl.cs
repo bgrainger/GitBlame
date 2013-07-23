@@ -212,7 +212,8 @@ namespace GitBlame
 		protected override void OnScrollChanged()
 		{
 			m_layout = m_layout.WithTopLineNumber((int) VerticalOffset + 1);
-			Render();
+			if (RenderSize.Width > 0 && RenderSize.Height > 0)
+				Render();
 		}
 
 		private void Render()
