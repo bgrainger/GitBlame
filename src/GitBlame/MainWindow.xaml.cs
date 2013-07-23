@@ -27,7 +27,7 @@ namespace GitBlame
 			if (filePath != null)
 			{
 				BlameResult blame = GitWrapper.GetBlameOutput(filePath);
-				Blame.SetBlameResult(blame);
+				Blame.SetBlameResult(blame, ((App) Application.Current).LineNumber ?? 1);
 			}
 		}
 
