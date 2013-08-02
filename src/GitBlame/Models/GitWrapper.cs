@@ -44,19 +44,22 @@ namespace GitBlame.Models
 			using (var repo = new Repository(repositoryPath))
 			{
 				// try to determine if the remote URL is plausibly a github.com or GitHub Enterprise URL
-				Uri webRootUrl = repo.Network.Remotes.Select(x =>
-				{
-					Match m = Regex.Match(x.Url, @"^(git@(?'host'[^:]+):(?'user'[^/]+)/(?'repo'[^/]+)\.git|(git|https?)://(?'host'[^/]+)/(?'user'[^/]+)/(?'repo'[^/]+)\.git)$", RegexOptions.ExplicitCapture);
-					if (m.Success)
+				Uri webRootUrl = repo.Network.Remotes
+					.OrderBy(x => x.Name == "origin" ? 0 : 1)
+					.ThenBy(x => x.Name)
+					.Select(x =>
 					{
-						string host = m.Groups["host"].Value;
-						return new Uri(string.Format("http{0}://{1}/{2}/{3}/", host == "github.com" ? "s" : "", host, m.Groups["user"].Value, m.Groups["repo"].Value));
-					}
-					else
-					{
-						return null;
-					}
-				}).FirstOrDefault(x => x != null);
+						Match m = Regex.Match(x.Url, @"^(git@(?'host'[^:]+):(?'user'[^/]+)/(?'repo'[^/]+)\.git|(git|https?)://(?'host'[^/]+)/(?'user'[^/]+)/(?'repo'[^/]+)\.git)$", RegexOptions.ExplicitCapture);
+						if (m.Success)
+						{
+							string host = m.Groups["host"].Value;
+							return new Uri(string.Format("http{0}://{1}/{2}/{3}/", host == "github.com" ? "s" : "", host, m.Groups["user"].Value, m.Groups["repo"].Value));
+						}
+						else
+						{
+							return null;
+						}
+					}).FirstOrDefault(x => x != null);
 
 				var gitCommit = repo.Head.Tip;
 				var commit = new Commit(gitCommit.Sha,
