@@ -186,10 +186,10 @@ namespace GitBlame
 
 		private void SetCommitColor(ref string commitId, string newCommitId, Color color)
 		{
-			if (commitId != null)
+			if (commitId != null && m_commitBrush.ContainsKey(commitId))
 				m_commitBrush[commitId].Color = GetCommitColor(commitId);
 
-			if (newCommitId != null)
+			if (newCommitId != null && m_commitBrush.ContainsKey(newCommitId))
 				m_commitBrush[newCommitId].Color = color;
 
 			commitId = newCommitId;
