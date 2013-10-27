@@ -213,7 +213,7 @@ namespace GitBlame.Layout
 					summaryPosition.Height = Math.Min(summaryPosition.Height - m_lineHeight, m_renderSize.Height);
 				}
 
-				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex[block.Commit.Author], block));
+				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex.ContainsKey(block.Commit.Author) ? m_authorIndex[block.Commit.Author] : 0, block));
 
 				blockIndex++;
 				lineCount += linesFromThisBlock;
