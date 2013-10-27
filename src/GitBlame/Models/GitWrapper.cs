@@ -262,7 +262,7 @@ namespace GitBlame.Models
 		{
 			// get content from commit
 			var blob = (Blob) commit.Tree[fileName].Target;
-			string content = blob.ContentAsUtf8();
+			string content = blob.ContentAsText();
 
 			// strip BOM (U+FEFF) if present
 			if (content.Length > 0 && content[0] == '\uFEFF')
