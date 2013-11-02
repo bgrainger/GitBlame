@@ -4,6 +4,7 @@ build/
 obj/
 packages/
 ipch/
+Releases/
 
 # ignore user-specific options/cache files
 _ReSharper.*
