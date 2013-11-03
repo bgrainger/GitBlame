@@ -1,0 +1,10 @@
+*.cs        text diff=csharp
+*.md        text
+*.txt       text
+*.html      text
+*.css       text
+*.js        text
+
+
+COPYING     text
+RELEASES    text
