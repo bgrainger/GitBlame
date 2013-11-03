@@ -8,4 +8,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Git Blame GUI for Windows</description>
   </metadata>
+  <files>
+    <file src="app.config" target="lib\net45\GitBlame.exe.config"/>
+  </files>
 </package>
