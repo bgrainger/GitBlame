@@ -196,7 +196,7 @@ namespace GitBlame.Layout
 				int hiddenLines = m_topLineNumber - block.StartLine;
 				int remainingLines = m_lineCount - lineCount;
 				int linesFromThisBlock = Math.Min(block.LineCount - Math.Max(0, hiddenLines), remainingLines);
-				double alpha = (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale + 0.1;
+				double alpha = 0.75 - (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale;
 
 				const double authorWidth = 10;
 				Rect authorPosition = new Rect(0, lineCount * m_lineHeight, authorWidth, linesFromThisBlock * m_lineHeight);
