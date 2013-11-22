@@ -151,6 +151,7 @@
     <Compile Include="Utility\TextElementUtility.cs" />
     <Compile Include="ViewModels\NotificationBase.cs" />
     <Compile Include="ViewModels\OpenFileNotification.cs" />
+    <Compile Include="ViewModels\UpdateAvailableNotification.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -85,6 +85,23 @@ namespace GitBlame
 			e.Handled = true;
 		}
 
+		private void OnApplyUpdate(object sender, ExecutedRoutedEventArgs e)
+		{
+			string path = e.Parameter as string;
+			if (path != null)
+			{
+				try
+				{
+					string arguments = "\"" + m_model.FilePath + "\" " + (Blame.TopLineNumber.HasValue ? Blame.TopLineNumber.Value.ToString() : "");
+					Process.Start(path, arguments);
+					Application.Current.Shutdown(0);
+				}
+				catch (Win32Exception)
+				{
+				}
+			}
+		}
+
 		readonly MainWindowModel m_model;
 	}
 }

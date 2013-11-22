@@ -8,7 +8,8 @@
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
         <CommandBinding Command="{x:Static src:Commands.BlamePreviousCommand}" Executed="OnBlamePrevious" CanExecute="OnCanBlamePrevious" />
-        <CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
+		<CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
+		<CommandBinding Command="{x:Static src:Commands.ApplyUpdateCommand}" Executed="OnApplyUpdate" />
     </Window.CommandBindings>
 
 	<Window.Resources>
@@ -17,6 +18,13 @@
 				<StackPanel Orientation="Horizontal">
 					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">Select a file to blame…</TextBlock>
 					<Button Command="{x:Static ApplicationCommands.Open}">Open</Button>
+				</StackPanel>
+			</DataTemplate>
+
+			<DataTemplate DataType="{x:Type vm:UpdateAvailableNotification}">
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">An update is available. Restart GitBlame to install it.</TextBlock>
+					<Button Command="{x:Static src:Commands.ApplyUpdateCommand}" CommandParameter="{Binding CommandParameter}">Restart</Button>
 				</StackPanel>
 			</DataTemplate>
 		</ResourceDictionary>
