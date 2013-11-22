@@ -14,6 +14,7 @@ using System.Windows.Threading;
 using GitBlame.Layout;
 using GitBlame.Models;
 using GitBlame.Utility;
+using ReactiveUI;
 
 namespace GitBlame
 {
@@ -46,9 +47,7 @@ namespace GitBlame
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
 
 			// can only show the tooltip if the mouse is over the control, and the context menu isn't open
-			var isMouseOver = this.ToObservableWithInitialValue<bool>(IsMouseOverProperty);
-			var isContextMenuOpen = ContextMenu.ToObservableWithInitialValue<bool>(ContextMenu.IsOpenProperty);
-			var canShowTooltip = Observable.CombineLatest(isMouseOver, isContextMenuOpen, (mo, cm) => mo && !cm);
+			var canShowTooltip = this.WhenAny(x => x.IsMouseOver, x => x.ContextMenu.IsOpen, (mo, cm) => mo.Value && !cm.Value);
 			canShowTooltip.Where(x => !x).ObserveOnDispatcher().Subscribe(_ => HideToolTip());
 
 			var mouseMove = Observable.FromEventPattern<MouseEventArgs>(this, "MouseMove");
