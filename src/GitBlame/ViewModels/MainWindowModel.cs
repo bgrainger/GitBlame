@@ -63,6 +63,10 @@ namespace GitBlame.ViewModels
 				{
 					// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
 				}
+				catch (TimeoutException)
+				{
+					// Failed to check for updates; try again the next time the app is run
+				}
 			}
 		}
 
