@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using GitBlame.Layout;
 using GitBlame.Models;
 using Microsoft.Win32;
 
@@ -15,40 +14,40 @@ namespace GitBlame
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		public MainWindow()
+		public MainWindow(MainWindowModel model)
 		{
+			DataContext = m_model = model;
 			InitializeComponent();
 			RunBlame();
 		}
 
 		private void RunBlame()
 		{
-			string filePath = ((App) Application.Current).FilePath;
+			string filePath = m_model.FilePath;
 			if (filePath != null)
 			{
 				BlameResult blame = GitWrapper.GetBlameOutput(filePath);
-				Blame.SetBlameResult(blame, ((App) Application.Current).LineNumber ?? 1);
+				Blame.SetBlameResult(blame, m_model.LineNumber ?? 1);
 			}
 		}
 
 		private void OpenCommand_Executed(object sender, ExecutedRoutedEventArgs e)
 		{
-			App app = (App) Application.Current;
 			OpenFileDialog dialog = new OpenFileDialog
 			{
-				InitialDirectory = Path.GetDirectoryName(app.FilePath),
+				InitialDirectory = Path.GetDirectoryName(m_model.FilePath),
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())
 			{
-				app.FilePath = dialog.FileName;
+				m_model.FilePath = dialog.FileName;
 				RunBlame();
 			}
 		}
 
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
-			string filePath = ((App) Application.Current).FilePath;
+			string filePath = m_model.FilePath;
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
 			if (filePath != null && blamePrevious != null)
 			{
@@ -84,5 +83,7 @@ namespace GitBlame
 			e.CanExecute = e.Parameter is Uri;
 			e.Handled = true;
 		}
+
+		readonly MainWindowModel m_model;
 	}
 }

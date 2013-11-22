@@ -72,6 +72,15 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\NuGet.Core.2.7.2\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
+    <Reference Include="ReactiveUI">
+      <HintPath>..\..\packages\reactiveui-core.5.3.0\lib\Portable-Net45+WinRT45+WP8\ReactiveUI.dll</HintPath>
+    </Reference>
+    <Reference Include="ReactiveUI.Blend">
+      <HintPath>..\..\packages\reactiveui-platforms.5.3.0\lib\net45\ReactiveUI.Blend.dll</HintPath>
+    </Reference>
+    <Reference Include="ReactiveUI.Xaml">
+      <HintPath>..\..\packages\reactiveui-platforms.5.3.0\lib\net45\ReactiveUI.Xaml.dll</HintPath>
+    </Reference>
     <Reference Include="Squirrel.Client">
       <HintPath>..\..\packages\Squirrel.Client.0.7.5\lib\net40\Squirrel.Client.dll</HintPath>
     </Reference>
@@ -120,9 +129,11 @@
     <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs">
       <Link>External\DiffMatchPatch.cs</Link>
     </Compile>
+    <Compile Include="AppModel.cs" />
     <Compile Include="BlameControl.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="Layout\BlameLayout.cs" />
+    <Compile Include="MainWindowModel.cs" />
     <Compile Include="Models\GitWrapper.cs" />
     <Compile Include="Models\Line.cs" />
     <Compile Include="Models\LinePart.cs" />

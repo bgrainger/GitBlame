@@ -1,8 +1,7 @@
 ﻿<Application x:Class="GitBlame.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:model="clr-namespace:GitBlame.Models"
-    StartupUri="MainWindow.xaml">
+    xmlns:model="clr-namespace:GitBlame.Models">
   <Application.Resources>
 
     <Style TargetType="{x:Type ToolTip}">
