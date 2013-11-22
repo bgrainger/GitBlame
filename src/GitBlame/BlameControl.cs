@@ -89,6 +89,9 @@ namespace GitBlame
 
 		protected override Size ArrangeOverride(Size finalSize)
 		{
+			if (m_layout == null)
+				return new Size();
+
 			m_layout = m_layout.WithRenderSize(finalSize);
 			SetVerticalScrollInfo(null, finalSize.Height / m_layout.LineHeight, null);
 			RedrawSoon();
@@ -97,6 +100,9 @@ namespace GitBlame
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
+			if (m_layout == null)
+				return new Size();
+
 			Typeface typeface = TextElementUtility.GetTypeface(this);
 			m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
 

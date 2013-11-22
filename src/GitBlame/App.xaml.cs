@@ -24,19 +24,14 @@ namespace GitBlame
 			MainWindowModel mainWindowModel = m_app.MainWindow;
 
 			string filePath = e.Args.Length >= 1 ? e.Args[0] : null;
-			if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-			{
-				MessageBox.Show("Usage: GitBlame file-path [line-number]", "GitBlame", MessageBoxButton.OK, MessageBoxImage.Error);
-				Shutdown(1);
-			}
-			else
+			if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
 			{
 				mainWindowModel.FilePath = filePath;
-			}
 
-			int lineNumber;
-			if (e.Args.Length >= 2 && int.TryParse(e.Args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out lineNumber))
-				mainWindowModel.LineNumber = lineNumber;
+				int lineNumber;
+				if (e.Args.Length >= 2 && int.TryParse(e.Args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out lineNumber))
+					mainWindowModel.LineNumber = lineNumber;
+			}
 
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
