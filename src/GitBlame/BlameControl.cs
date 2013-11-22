@@ -64,6 +64,11 @@ namespace GitBlame
 				.Subscribe(ShowCommitTooltip);
 		}
 
+		public int? TopLineNumber
+		{
+			get { return m_layout == null ? default(int?) : m_layout.TopLineNumber; }
+		}
+
 		internal void SetBlameResult(BlameResult blame, int topLineNumber = 1)
 		{
 			if (m_blameSubscription != null)
