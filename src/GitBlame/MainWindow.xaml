@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:src="clr-namespace:GitBlame"
+        xmlns:vm="clr-namespace:GitBlame.ViewModels"
         Title="GitBlame" Height="800" Width="1200" Icon="App.ico">
 
     <Window.CommandBindings>
@@ -12,7 +13,7 @@
 
 	<Window.Resources>
 		<ResourceDictionary>
-			<DataTemplate DataType="{x:Type src:OpenFileNotification}">
+			<DataTemplate DataType="{x:Type vm:OpenFileNotification}">
 				<StackPanel Orientation="Horizontal">
 					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">Select a file to blame…</TextBlock>
 					<Button Command="{x:Static ApplicationCommands.Open}">Open</Button>

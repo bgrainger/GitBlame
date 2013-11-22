@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 
-namespace GitBlame
+namespace GitBlame.ViewModels
 {
 	public sealed class AppModel : ReactiveObject
 	{

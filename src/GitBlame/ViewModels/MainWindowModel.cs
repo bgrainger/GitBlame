@@ -3,7 +3,7 @@ using System.Reactive.Linq;
 using System.Windows;
 using ReactiveUI;
 
-namespace GitBlame
+namespace GitBlame.ViewModels
 {
 	public sealed class MainWindowModel : ReactiveObject
 	{
@@ -40,15 +40,5 @@ namespace GitBlame
 		int? m_lineNumber;
 		NotificationBase m_notification;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
-	}
-
-	public abstract class NotificationBase : ReactiveObject
-	{
-
-	}
-
-	public class OpenFileNotification : NotificationBase
-	{
-		
 	}
 }

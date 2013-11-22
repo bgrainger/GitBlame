@@ -129,11 +129,11 @@
     <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs">
       <Link>External\DiffMatchPatch.cs</Link>
     </Compile>
-    <Compile Include="AppModel.cs" />
+    <Compile Include="ViewModels\AppModel.cs" />
     <Compile Include="BlameControl.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="Layout\BlameLayout.cs" />
-    <Compile Include="MainWindowModel.cs" />
+    <Compile Include="ViewModels\MainWindowModel.cs" />
     <Compile Include="Models\GitWrapper.cs" />
     <Compile Include="Models\Line.cs" />
     <Compile Include="Models\LinePart.cs" />
@@ -149,6 +149,8 @@
     <Compile Include="Utility\ScrollableControl.cs" />
     <Compile Include="Utility\StringExtensions.cs" />
     <Compile Include="Utility\TextElementUtility.cs" />
+    <Compile Include="ViewModels\NotificationBase.cs" />
+    <Compile Include="ViewModels\OpenFileNotification.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using GitBlame.Models;
+using GitBlame.ViewModels;
 using Microsoft.Win32;
 
 namespace GitBlame
