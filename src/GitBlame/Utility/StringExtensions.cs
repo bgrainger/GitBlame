@@ -1,10 +1,23 @@
-﻿
-using System;
+﻿using System;
+using System.Globalization;
+using JetBrains.Annotations;
 
 namespace GitBlame.Utility
 {
 	public static class StringExtensions
 	{
+		/// <summary>
+		/// Formats the string using the invariant culture.
+		/// </summary>
+		/// <param name="format">The format string.</param>
+		/// <param name="args">The format arguments.</param>
+		/// <returns>The formatted string.</returns>
+		[StringFormatMethod("format")]
+		public static string FormatInvariant(this string format, params object[] args)
+		{
+			return string.Format(CultureInfo.InvariantCulture, format, args);
+		}
+
 		/// <summary>
 		/// Splits the given string on the first space (if any) and returns the two parts.
 		/// </summary>

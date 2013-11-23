@@ -129,6 +129,7 @@
     <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs">
       <Link>External\DiffMatchPatch.cs</Link>
     </Compile>
+    <Compile Include="JetBrains\Annotations.cs" />
     <Compile Include="ViewModels\AppModel.cs" />
     <Compile Include="BlameControl.cs" />
     <Compile Include="Commands.cs" />
