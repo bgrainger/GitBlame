@@ -41,6 +41,17 @@ namespace GitBlame.Utility
 		}
 
 		/// <summary>
+		/// Returns a string that contains at most the first <paramref name="maxLength"/> characters of <paramref name="value"/>.
+		/// </summary>
+		/// <param name="value">The string to truncate.</param>
+		/// <param name="maxLength">The maximum length.</param>
+		/// <returns>The truncated string.</returns>
+		public static string Truncate(this string value, int maxLength)
+		{
+			return value == null || value.Length <= maxLength ? value : value.Substring(0, maxLength);
+		}
+
+		/// <summary>
 		/// Returns a string with the contents of <paramref name="value"/> that has a <see cref="String.Length"/> of <paramref name="length"/>.
 		/// </summary>
 		/// <param name="value">The string.</param>

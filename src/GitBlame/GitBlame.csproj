@@ -89,10 +89,12 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Abstractions">
       <HintPath>..\..\packages\System.IO.Abstractions.1.4.0.68\lib\net35\System.IO.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\..\packages\Rx-Core.2.1.30214.0\lib\Net45\System.Reactive.Core.dll</HintPath>
     </Reference>
@@ -109,6 +111,7 @@
       <HintPath>..\..\packages\Rx-XAML.2.1.30214.0\lib\Net45\System.Reactive.Windows.Threading.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -129,6 +132,8 @@
     <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs">
       <Link>External\DiffMatchPatch.cs</Link>
     </Compile>
+    <Compile Include="Analytics\GoogleAnalyticsClient.cs" />
+    <Compile Include="Analytics\GoogleAnalyticsStatisticsProvider.cs" />
     <Compile Include="JetBrains\Annotations.cs" />
     <Compile Include="Utility\DateTimeOffsetExtensions.cs" />
     <Compile Include="ViewModels\AppModel.cs" />
