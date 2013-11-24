@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
@@ -14,6 +15,7 @@ namespace GitBlame.ViewModels
 		public MainWindowModel()
 		{
 			m_notificationVisibility = this.WhenAny(x => x.Notification, x => x.Value != null).Select(x => x ? Visibility.Visible: Visibility.Collapsed).ToProperty(this, x => x.NotificationVisibility);
+			m_windowTitle = this.WhenAny(x => x.FilePath, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 			this.WhenAny(x => x.FilePath, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null).Subscribe(x => Notification = x);
 
 			CheckForUpdates();
@@ -40,6 +42,11 @@ namespace GitBlame.ViewModels
 		public Visibility NotificationVisibility
 		{
 			get { return m_notificationVisibility.Value; }
+		}
+
+		public string WindowTitle
+		{
+			get { return m_windowTitle.Value; }
 		}
 
 		private async void CheckForUpdates()
@@ -73,6 +80,7 @@ namespace GitBlame.ViewModels
 		string m_filePath;
 		int? m_lineNumber;
 		NotificationBase m_notification;
+		readonly ObservableAsPropertyHelper<string> m_windowTitle;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
 	}
 }

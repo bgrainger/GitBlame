@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:src="clr-namespace:GitBlame"
         xmlns:vm="clr-namespace:GitBlame.ViewModels"
-        Title="GitBlame" Height="800" Width="1200" Icon="App.ico">
+        Title="{Binding WindowTitle}" Height="800" Width="1200" Icon="App.ico">
 
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
