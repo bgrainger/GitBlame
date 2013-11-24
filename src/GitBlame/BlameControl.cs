@@ -180,7 +180,7 @@ namespace GitBlame
 				int previousTopLine = Math.Max(1, line.OldLineNumber - lineIndex);
 
 				Commit commit = block.RawCommit;
-				m_blamePreviousMenuItem.CommandParameter = new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
+				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId == null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
 				m_viewAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
 				ContextMenu.IsOpen = true;
 			}

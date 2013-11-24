@@ -1,9 +1,14 @@
-﻿namespace GitBlame.Models
+﻿using System;
+
+namespace GitBlame.Models
 {
 	public sealed class BlamePreviousModel
 	{
 		public BlamePreviousModel(string commitId, string fileName, int lineNumber)
 		{
+			if (commitId == null)
+				throw new ArgumentNullException("commitId");
+
 			m_lineNumber = lineNumber;
 			m_commitId = commitId;
 			m_fileName = fileName;
