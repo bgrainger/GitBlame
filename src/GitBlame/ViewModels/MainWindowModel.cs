@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Windows;
 using ReactiveUI;
 using Squirrel.Client;
@@ -14,9 +15,14 @@ namespace GitBlame.ViewModels
 	{
 		public MainWindowModel()
 		{
-			m_notificationVisibility = this.WhenAny(x => x.Notification, x => x.Value != null).Select(x => x ? Visibility.Visible: Visibility.Collapsed).ToProperty(this, x => x.NotificationVisibility);
 			m_windowTitle = this.WhenAny(x => x.FilePath, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
-			this.WhenAny(x => x.FilePath, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null).Subscribe(x => Notification = x);
+
+			var openFileNotifications = this.WhenAny(x => x.FilePath, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
+			m_updateAvailableNotifications = new Subject<UpdateAvailableNotification>();
+			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(m_updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
+				(of, ua) => (NotificationBase) of ?? ua);
+			m_notification = notifications.ToProperty(this, x => x.Notification);
+			m_notificationVisibility = notifications.Select(x => x != null ? Visibility.Visible : Visibility.Collapsed).ToProperty(this, x => x.NotificationVisibility);
 
 			CheckForUpdates();
 		}
@@ -35,8 +41,7 @@ namespace GitBlame.ViewModels
 
 		public NotificationBase Notification
 		{
-			get { return m_notification; }
-			set { this.RaiseAndSetIfChanged(ref m_notification, value); }
+			get { return m_notification.Value; }
 		}
 
 		public Visibility NotificationVisibility
@@ -63,7 +68,7 @@ namespace GitBlame.ViewModels
 						var results = await updateManager.ApplyReleases(updateInfo);
 
 						if (results.Any())
-							Notification = new UpdateAvailableNotification(results[0]);
+							m_updateAvailableNotifications.OnNext(new UpdateAvailableNotification(results[0]));
 					}
 				}
 				catch (InvalidOperationException)
@@ -79,8 +84,9 @@ namespace GitBlame.ViewModels
 
 		string m_filePath;
 		int? m_lineNumber;
-		NotificationBase m_notification;
+		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
+		readonly Subject<UpdateAvailableNotification> m_updateAvailableNotifications;
 	}
 }
