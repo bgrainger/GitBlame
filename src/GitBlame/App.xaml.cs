@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
 using Bugsense.WPF;
 using GitBlame.Analytics;
@@ -28,7 +27,7 @@ namespace GitBlame
 			m_app = new AppModel();
 		}
 
-		protected override void OnStartup(StartupEventArgs e)
+		protected override async void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
 
@@ -44,10 +43,10 @@ namespace GitBlame
 					mainWindowModel.LineNumber = lineNumber;
 			}
 
-			Task ignored = m_analyticsClient.SubmitAppViewAsync("MainWindow");
-
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
+
+			await m_analyticsClient.SubmitAppViewAsync("MainWindow");
 		}
 
 		protected override void OnExit(ExitEventArgs e)
