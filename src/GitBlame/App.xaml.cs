@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using Bugsense.WPF;
 using GitBlame.Analytics;
 using GitBlame.ViewModels;
 
@@ -16,6 +17,7 @@ namespace GitBlame
 		public App()
 		{
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
+			BugSense.Init("w8cfcffb");
 
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{

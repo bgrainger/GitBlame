@@ -35,7 +35,7 @@ namespace GitBlame.Analytics
 
 		public Task SubmitExceptionAsync(Exception ex, bool isFatal)
 		{
-			return SubmitAsync("t", "exception", "exd", ex.GetType().Name, "exf", isFatal ? "1" : "0", "cd", ex.ToString().Replace(Environment.NewLine, "~").Truncate(1000));
+			return SubmitAsync("t", "exception", "exd", ex.GetType().Name, "exf", isFatal ? "1" : "0");
 		}
 
 		public Task SubmitSessionEndAsync()
