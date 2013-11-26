@@ -50,7 +50,7 @@ namespace GitBlame
 
 		protected override void OnExit(ExitEventArgs e)
 		{
-			m_analyticsClient.SubmitSessionEndAsync();
+			m_analyticsClient.SubmitSessionEndAsync().Wait();
 
 			base.OnExit(e);
 		}
