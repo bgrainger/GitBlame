@@ -72,7 +72,7 @@ namespace GitBlame.Analytics
 
 			// build the URL; use SSL to prevent casual sniffing of the data
 			Uri uri = new Uri("https://ssl.google-analytics.com/collect");
-			await m_httpClient.PostAsync(uri, new StringContent(sb.ToString()));
+			await m_httpClient.PostAsync(uri, new StringContent(sb.ToString())).ConfigureAwait(false);
 		}
 
 		private static Guid LoadOrCreateClientId()
