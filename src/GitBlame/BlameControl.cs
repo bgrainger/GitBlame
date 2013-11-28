@@ -89,6 +89,7 @@ namespace GitBlame
 			CreateBrushesForAuthors(m_layout.AuthorCount);
 
 			SetVerticalScrollInfo(m_lineCount + 1, null, topLineNumber - 1);
+			OnScrollChanged();
 			RedrawSoon();
 		}
 
