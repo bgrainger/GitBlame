@@ -32,7 +32,7 @@ namespace GitBlame
 			Blame.SetBlameResult(blame, position.LineNumber ?? 1);
 		}
 
-		private void OpenCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+		private void OnOpen(object sender, ExecutedRoutedEventArgs e)
 		{
 			var position = m_model.Position;
 			OpenFileDialog dialog = new OpenFileDialog
@@ -44,12 +44,12 @@ namespace GitBlame
 				m_model.NavigateTo(new BlamePositionModel(dialog.FileName));
 		}
 
-		void OnNavigationCommandsBrowseBack(object sender, ExecutedRoutedEventArgs e)
+		void OnBrowseBack(object sender, ExecutedRoutedEventArgs e)
 		{
 			m_model.NavigateBack();
 		}
 
-		void OnNavigationCommandsBrowseForward(object sender, ExecutedRoutedEventArgs e)
+		void OnBrowseForward(object sender, ExecutedRoutedEventArgs e)
 		{
 			m_model.NavigateForward();
 		}
