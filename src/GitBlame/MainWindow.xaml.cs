@@ -41,7 +41,17 @@ namespace GitBlame
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())
-				m_model.Position = new BlamePositionModel(dialog.FileName);
+				m_model.NavigateTo(new BlamePositionModel(dialog.FileName));
+		}
+
+		void OnNavigationCommandsBrowseBack(object sender, ExecutedRoutedEventArgs e)
+		{
+			m_model.NavigateBack();
+		}
+
+		void OnNavigationCommandsBrowseForward(object sender, ExecutedRoutedEventArgs e)
+		{
+			m_model.NavigateForward();
 		}
 
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
@@ -49,11 +59,11 @@ namespace GitBlame
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
 			if (m_model.Position != null && blamePrevious != null)
 			{
-				m_model.Position = new BlamePositionModel(m_model.Position.RepoPath, blamePrevious.FileName)
+				m_model.NavigateTo(new BlamePositionModel(m_model.Position.RepoPath, blamePrevious.FileName)
 				{
 					CommitId = blamePrevious.CommitId,
 					LineNumber = blamePrevious.LineNumber,
-				};
+				});
 			}
 		}
 

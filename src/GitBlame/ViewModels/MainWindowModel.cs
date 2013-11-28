@@ -15,6 +15,9 @@ namespace GitBlame.ViewModels
 	{
 		public MainWindowModel()
 		{
+			m_positionHistory = new Stack<BlamePositionModel>();
+			m_positionFuture = new Stack<BlamePositionModel>();
+
 			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
@@ -30,7 +33,33 @@ namespace GitBlame.ViewModels
 		public BlamePositionModel Position
 		{
 			get { return m_position; }
-			set { this.RaiseAndSetIfChanged(ref m_position, value); }
+			private set { this.RaiseAndSetIfChanged(ref m_position, value); }
+		}
+
+		public void NavigateTo(BlamePositionModel position)
+		{
+			if (Position != null)
+				m_positionHistory.Push(Position);
+			m_positionFuture.Clear();
+			Position = position;
+		}
+
+		public void NavigateBack()
+		{
+			if (m_positionHistory.Count != 0)
+			{
+				m_positionFuture.Push(Position);
+				Position = m_positionHistory.Pop();
+			}
+		}
+
+		public void NavigateForward()
+		{
+			if (m_positionFuture.Count != 0)
+			{
+				m_positionHistory.Push(Position);
+				Position = m_positionFuture.Pop();
+			}
 		}
 
 		public NotificationBase Notification
@@ -76,6 +105,8 @@ namespace GitBlame.ViewModels
 			}
 		}
 
+		readonly Stack<BlamePositionModel> m_positionHistory;
+		readonly Stack<BlamePositionModel> m_positionFuture;
 		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;

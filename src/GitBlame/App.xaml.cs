@@ -51,7 +51,7 @@ namespace GitBlame
 				if (e.Args.Length >= 2 && int.TryParse(e.Args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out lineNumber))
 					position.LineNumber = lineNumber;
 			}
-			mainWindowModel.Position = position;
+			mainWindowModel.NavigateTo(position);
 
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();

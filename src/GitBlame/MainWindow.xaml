@@ -5,12 +5,14 @@
         xmlns:vm="clr-namespace:GitBlame.ViewModels"
         Title="{Binding WindowTitle}" Height="800" Width="1200" Icon="App.ico">
 
-    <Window.CommandBindings>
-        <CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
-        <CommandBinding Command="{x:Static src:Commands.BlamePreviousCommand}" Executed="OnBlamePrevious" CanExecute="OnCanBlamePrevious" />
+	<Window.CommandBindings>
+		<CommandBinding Command="{x:Static ApplicationCommands.Open}" Executed="OpenCommand_Executed" />
+		<CommandBinding Command="{x:Static NavigationCommands.BrowseBack}" Executed="OnNavigationCommandsBrowseBack" />
+		<CommandBinding Command="{x:Static NavigationCommands.BrowseForward}" Executed="OnNavigationCommandsBrowseForward" />
+		<CommandBinding Command="{x:Static src:Commands.BlamePreviousCommand}" Executed="OnBlamePrevious" CanExecute="OnCanBlamePrevious" />
 		<CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
 		<CommandBinding Command="{x:Static src:Commands.ApplyUpdateCommand}" Executed="OnApplyUpdate" />
-    </Window.CommandBindings>
+	</Window.CommandBindings>
 
 	<Window.Resources>
 		<ResourceDictionary>
