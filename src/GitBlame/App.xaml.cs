@@ -35,7 +35,15 @@ namespace GitBlame
 			BlamePositionModel position = null;
 
 			string filePath = e.Args.Length >= 1 ? e.Args[0] : null;
-			if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+			if (filePath == "/restart" && e.Args.Length == 5)
+			{
+				position = new BlamePositionModel(e.Args[1], e.Args[2])
+				{
+					CommitId = e.Args[3] == "null" ? null : e.Args[3],
+					LineNumber = int.Parse(e.Args[4]),
+				};
+			}
+			else if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
 			{
 				position = new BlamePositionModel(filePath);
 

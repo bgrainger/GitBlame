@@ -2,11 +2,14 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Input;
 using GitBlame.Models;
+using GitBlame.Utility;
 using GitBlame.ViewModels;
 using Microsoft.Win32;
+using ReactiveUI;
 
 namespace GitBlame
 {
@@ -19,31 +22,26 @@ namespace GitBlame
 		{
 			DataContext = m_model = model;
 			InitializeComponent();
-			RunBlame();
+
+			model.WhenAny(x => x.Position, x => x.Value).Where(x => x != null).Subscribe(RunBlame);
 		}
 
-		private void RunBlame()
+		private void RunBlame(BlamePositionModel position)
 		{
-			var position = m_model.Position;
-			if (position != null)
-			{
-				BlameResult blame = GitWrapper.GetBlameOutput(position.FilePath);
-				Blame.SetBlameResult(blame, position.LineNumber ?? 1);
-			}
+			BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName, position.CommitId);
+			Blame.SetBlameResult(blame, position.LineNumber ?? 1);
 		}
 
 		private void OpenCommand_Executed(object sender, ExecutedRoutedEventArgs e)
 		{
+			var position = m_model.Position;
 			OpenFileDialog dialog = new OpenFileDialog
 			{
-				InitialDirectory = m_model.Position == null ? null : Path.GetDirectoryName(m_model.Position.FilePath),
+				InitialDirectory = position == null ? null : Path.GetDirectoryName(position.GetFilePath()),
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())
-			{
 				m_model.Position = new BlamePositionModel(dialog.FileName);
-				RunBlame();
-			}
 		}
 
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
@@ -51,10 +49,12 @@ namespace GitBlame
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
 			if (m_model.Position != null && blamePrevious != null)
 			{
-				string repoPath = GitWrapper.GetRepositoryPath(m_model.Position.FilePath);
-				BlameResult blame = GitWrapper.GetBlameOutput(repoPath, blamePrevious.FileName, blamePrevious.CommitId);
-				Blame.SetBlameResult(blame, blamePrevious.LineNumber);
-			}				
+				m_model.Position = new BlamePositionModel(m_model.Position.RepoPath, blamePrevious.FileName)
+				{
+					CommitId = blamePrevious.CommitId,
+					LineNumber = blamePrevious.LineNumber,
+				};
+			}
 		}
 
 		private void OnCanBlamePrevious(object sender, CanExecuteRoutedEventArgs e)
@@ -91,7 +91,8 @@ namespace GitBlame
 			{
 				try
 				{
-					string arguments = m_model.Position == null ? null : "\"" + m_model.Position.FilePath + "\" " + (Blame.TopLineNumber.HasValue ? Blame.TopLineNumber.Value.ToString() : "");
+					var position = m_model.Position;
+					string arguments = position == null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
 					Process.Start(path, arguments);
 					Application.Current.Shutdown(0);
 				}

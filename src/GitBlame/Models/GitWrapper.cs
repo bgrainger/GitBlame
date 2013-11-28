@@ -17,25 +17,27 @@ namespace GitBlame.Models
 	{
 		public const string UncommittedChangesCommitId = "0000000000000000000000000000000000000000";
 
-		public static BlameResult GetBlameOutput(string filePath)
-		{
-			string repoPath = GetRepositoryPath(filePath);
-			string fileName = filePath.Substring(Path.GetDirectoryName(repoPath).Length + 1);
-			string[] currentLines = File.ReadAllLines(filePath);
-			return GetBlameOutput(repoPath, fileName, null, currentLines);
-		}
-
 		public static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId)
 		{
-			List<string> lines = new List<string>();
-			using (StringReader reader = new StringReader(GetFileContent(repositoryPath, blameCommitId, fileName)))
+			string[] fileLines;
+
+			if (blameCommitId == null)
 			{
-				string line = null;
-				while ((line = reader.ReadLine()) != null)
-					lines.Add(line);
+				fileLines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(repositoryPath), fileName));
+			}
+			else
+			{
+				List<string> lines = new List<string>();
+				using (StringReader reader = new StringReader(GetFileContent(repositoryPath, blameCommitId, fileName)))
+				{
+					string line;
+					while ((line = reader.ReadLine()) != null)
+						lines.Add(line);
+				}
+				fileLines = lines.ToArray();
 			}
 
-			return GetBlameOutput(repositoryPath, fileName, blameCommitId, lines.ToArray());
+			return GetBlameOutput(repositoryPath, fileName, blameCommitId, fileLines);
 		}
 
 		private static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId, string[] currentLines)

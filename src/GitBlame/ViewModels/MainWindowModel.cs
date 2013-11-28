@@ -15,7 +15,7 @@ namespace GitBlame.ViewModels
 	{
 		public MainWindowModel()
 		{
-			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FilePath) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
+			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
 			m_updateAvailableNotifications = new Subject<UpdateAvailableNotification>();
