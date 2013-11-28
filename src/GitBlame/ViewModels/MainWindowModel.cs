@@ -15,9 +15,9 @@ namespace GitBlame.ViewModels
 	{
 		public MainWindowModel()
 		{
-			m_windowTitle = this.WhenAny(x => x.FilePath, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
+			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FilePath) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
-			var openFileNotifications = this.WhenAny(x => x.FilePath, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
+			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
 			m_updateAvailableNotifications = new Subject<UpdateAvailableNotification>();
 			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(m_updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
 				(of, ua) => (NotificationBase) of ?? ua);
@@ -27,16 +27,10 @@ namespace GitBlame.ViewModels
 			CheckForUpdates();
 		}
 
-		public string FilePath
+		public BlamePositionModel Position
 		{
-			get { return m_filePath; }
-			set { this.RaiseAndSetIfChanged(ref m_filePath, value); }
-		}
-
-		public int? LineNumber
-		{
-			get { return m_lineNumber; }
-			set { this.RaiseAndSetIfChanged(ref m_lineNumber, value); }
+			get { return m_position; }
+			set { this.RaiseAndSetIfChanged(ref m_position, value); }
 		}
 
 		public NotificationBase Notification
@@ -82,11 +76,10 @@ namespace GitBlame.ViewModels
 			}
 		}
 
-		string m_filePath;
-		int? m_lineNumber;
 		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
 		readonly Subject<UpdateAvailableNotification> m_updateAvailableNotifications;
+		BlamePositionModel m_position;
 	}
 }

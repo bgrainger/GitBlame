@@ -24,11 +24,11 @@ namespace GitBlame
 
 		private void RunBlame()
 		{
-			string filePath = m_model.FilePath;
-			if (filePath != null)
+			var position = m_model.Position;
+			if (position != null)
 			{
-				BlameResult blame = GitWrapper.GetBlameOutput(filePath);
-				Blame.SetBlameResult(blame, m_model.LineNumber ?? 1);
+				BlameResult blame = GitWrapper.GetBlameOutput(position.FilePath);
+				Blame.SetBlameResult(blame, position.LineNumber ?? 1);
 			}
 		}
 
@@ -36,23 +36,22 @@ namespace GitBlame
 		{
 			OpenFileDialog dialog = new OpenFileDialog
 			{
-				InitialDirectory = Path.GetDirectoryName(m_model.FilePath),
+				InitialDirectory = m_model.Position == null ? null : Path.GetDirectoryName(m_model.Position.FilePath),
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())
 			{
-				m_model.FilePath = dialog.FileName;
+				m_model.Position = new BlamePositionModel(dialog.FileName);
 				RunBlame();
 			}
 		}
 
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
-			string filePath = m_model.FilePath;
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
-			if (filePath != null && blamePrevious != null)
+			if (m_model.Position != null && blamePrevious != null)
 			{
-				string repoPath = GitWrapper.GetRepositoryPath(filePath);
+				string repoPath = GitWrapper.GetRepositoryPath(m_model.Position.FilePath);
 				BlameResult blame = GitWrapper.GetBlameOutput(repoPath, blamePrevious.FileName, blamePrevious.CommitId);
 				Blame.SetBlameResult(blame, blamePrevious.LineNumber);
 			}				
@@ -92,7 +91,7 @@ namespace GitBlame
 			{
 				try
 				{
-					string arguments = "\"" + m_model.FilePath + "\" " + (Blame.TopLineNumber.HasValue ? Blame.TopLineNumber.Value.ToString() : "");
+					string arguments = m_model.Position == null ? null : "\"" + m_model.Position.FilePath + "\" " + (Blame.TopLineNumber.HasValue ? Blame.TopLineNumber.Value.ToString() : "");
 					Process.Start(path, arguments);
 					Application.Current.Shutdown(0);
 				}

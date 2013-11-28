@@ -146,6 +146,7 @@
     <Compile Include="BlameControl.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="Layout\BlameLayout.cs" />
+    <Compile Include="ViewModels\BlamePositionModel.cs" />
     <Compile Include="ViewModels\MainWindowModel.cs" />
     <Compile Include="Models\GitWrapper.cs" />
     <Compile Include="Models\Line.cs" />

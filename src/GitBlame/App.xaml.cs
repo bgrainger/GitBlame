@@ -32,16 +32,18 @@ namespace GitBlame
 			base.OnStartup(e);
 
 			MainWindowModel mainWindowModel = m_app.MainWindow;
+			BlamePositionModel position = null;
 
 			string filePath = e.Args.Length >= 1 ? e.Args[0] : null;
 			if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
 			{
-				mainWindowModel.FilePath = filePath;
+				position = new BlamePositionModel(filePath);
 
 				int lineNumber;
 				if (e.Args.Length >= 2 && int.TryParse(e.Args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out lineNumber))
-					mainWindowModel.LineNumber = lineNumber;
+					position.LineNumber = lineNumber;
 			}
+			mainWindowModel.Position = position;
 
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
