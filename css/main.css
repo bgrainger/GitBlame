@@ -1,0 +1,50 @@
+body {
+    background: #f5f5f5;
+}
+
+div.wrapper {
+    background: white;
+    margin: 24px 24px;
+    padding: 8px 16px;
+}
+
+h1 {
+    margin: 8px 0;
+}
+
+p {
+    margin: 8px 0
+}
+
+button.download {
+display: inline-block;
+padding: 6px 12px;
+margin-bottom: 0;
+font-size: 14px;
+font-weight: normal;
+line-height: 1.428571429;
+text-align: center;
+white-space: nowrap;
+vertical-align: middle;
+cursor: pointer;
+background-image: none;
+border: 1px solid transparent;
+border-radius: 4px;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+-o-user-select: none;
+user-select: none;
+}
+
+button.download {
+color: #fff;
+background-color: #5cb85c;
+border-color: #4cae4c;
+}
+
+button.download:hover, button.download:focus, button.download:active {
+color: #fff;
+background-color: #47a447;
+border-color: #398439;
+}
