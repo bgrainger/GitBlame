@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Security;
-using System.Windows;
 using Microsoft.Win32;
 using ReactiveUI;
 using Squirrel.Client;
@@ -24,9 +23,9 @@ namespace GitBlame.ViewModels
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
 			var updateAvailableNotifications = CheckForUpdates();
 			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
-				(of, ua) => (NotificationBase) of ?? ua);
+				(of, ua) => (NotificationBase) of ?? ua)
+				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
-			m_notificationVisibility = notifications.Select(x => x != null ? Visibility.Visible : Visibility.Collapsed).ToProperty(this, x => x.NotificationVisibility);
 
 			CheckForUpdates();
 		}
@@ -66,11 +65,6 @@ namespace GitBlame.ViewModels
 		public NotificationBase Notification
 		{
 			get { return m_notification.Value; }
-		}
-
-		public Visibility NotificationVisibility
-		{
-			get { return m_notificationVisibility.Value; }
 		}
 
 		public string WindowTitle
@@ -130,7 +124,6 @@ namespace GitBlame.ViewModels
 		readonly Stack<BlamePositionModel> m_positionFuture;
 		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
-		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
 		BlamePositionModel m_position;
 	}
 }
