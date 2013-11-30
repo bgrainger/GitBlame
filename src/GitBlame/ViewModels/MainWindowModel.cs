@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Security;
 using System.Windows;
+using Microsoft.Win32;
 using ReactiveUI;
 using Squirrel.Client;
 using Squirrel.Core;
@@ -80,7 +82,23 @@ namespace GitBlame.ViewModels
 		{
 			return Observable.Create<UpdateAvailableNotification>(async obs =>
 			{
-				using (var updateManager = new UpdateManager(@"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
+				string updateUrl = null;
+				try
+				{
+					using (var key = Registry.CurrentUser.OpenSubKey(@"Software\GitBlame"))
+					{
+						if (key != null)
+							updateUrl = key.GetValue("UpdateUrl") as string;
+					}
+				}
+				catch (SecurityException)
+				{
+				}
+				catch (UnauthorizedAccessException)
+				{
+				}
+
+				using (var updateManager = new UpdateManager(updateUrl ?? @"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
 				{
 					try
 					{
