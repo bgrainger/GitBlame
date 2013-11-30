@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Windows;
 using ReactiveUI;
 using Squirrel.Client;
@@ -21,8 +20,8 @@ namespace GitBlame.ViewModels
 			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
-			m_updateAvailableNotifications = new Subject<UpdateAvailableNotification>();
-			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(m_updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
+			var updateAvailableNotifications = CheckForUpdates();
+			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
 				(of, ua) => (NotificationBase) of ?? ua);
 			m_notification = notifications.ToProperty(this, x => x.Notification);
 			m_notificationVisibility = notifications.Select(x => x != null ? Visibility.Visible : Visibility.Collapsed).ToProperty(this, x => x.NotificationVisibility);
@@ -77,32 +76,36 @@ namespace GitBlame.ViewModels
 			get { return m_windowTitle.Value; }
 		}
 
-		private async void CheckForUpdates()
+		private IObservable<UpdateAvailableNotification> CheckForUpdates()
 		{
-			using (var updateManager = new UpdateManager(@"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
+			return Observable.Create<UpdateAvailableNotification>(async obs =>
 			{
-				try
+				using (var updateManager = new UpdateManager(@"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
 				{
-					UpdateInfo updateInfo = await updateManager.CheckForUpdate();
-					var releases = updateInfo == null ? new List<ReleaseEntry>() : updateInfo.ReleasesToApply.ToList();
-					if (releases.Count != 0)
+					try
 					{
-						await updateManager.DownloadReleases(releases);
-						var results = await updateManager.ApplyReleases(updateInfo);
+						UpdateInfo updateInfo = await updateManager.CheckForUpdate();
+						var releases = updateInfo == null ? new List<ReleaseEntry>() : updateInfo.ReleasesToApply.ToList();
+						if (releases.Count != 0)
+						{
+							await updateManager.DownloadReleases(releases);
+							var results = await updateManager.ApplyReleases(updateInfo);
 
-						if (results.Any())
-							m_updateAvailableNotifications.OnNext(new UpdateAvailableNotification(results[0]));
+							if (results.Any())
+								obs.OnNext(new UpdateAvailableNotification(results[0]));
+						}
+					}
+					catch (InvalidOperationException)
+					{
+						// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
+					}
+					catch (TimeoutException)
+					{
+						// Failed to check for updates; try again the next time the app is run
 					}
 				}
-				catch (InvalidOperationException)
-				{
-					// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
-				}
-				catch (TimeoutException)
-				{
-					// Failed to check for updates; try again the next time the app is run
-				}
-			}
+				obs.OnCompleted();
+			});
 		}
 
 		readonly Stack<BlamePositionModel> m_positionHistory;
@@ -110,7 +113,6 @@ namespace GitBlame.ViewModels
 		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
 		readonly ObservableAsPropertyHelper<Visibility> m_notificationVisibility;
-		readonly Subject<UpdateAvailableNotification> m_updateAvailableNotifications;
 		BlamePositionModel m_position;
 	}
 }
