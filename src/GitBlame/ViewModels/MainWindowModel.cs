@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Security;
-using Microsoft.Win32;
 using ReactiveUI;
 using Squirrel.Client;
 using Squirrel.Core;
@@ -21,9 +19,10 @@ namespace GitBlame.ViewModels
 			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value).Select(x => x == null ? new OpenFileNotification() : null);
-			var updateAvailableNotifications = CheckForUpdates();
-			var notifications = openFileNotifications.StartWith(default(OpenFileNotification)).CombineLatest(updateAvailableNotifications.StartWith(default(UpdateAvailableNotification)),
-				(of, ua) => (NotificationBase) of ?? ua)
+			var notifications = openFileNotifications.Cast<NotificationBase>().StartWith(default(NotificationBase)).CombineLatest(
+					CheckForUpdates().Cast<NotificationBase>().StartWith(default(NotificationBase)),
+					VisualStudioIntegration.Check().Cast<NotificationBase>().StartWith(default(NotificationBase)),
+					(of, ua, vs) => of ?? ua ?? vs)
 				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
 
@@ -76,22 +75,7 @@ namespace GitBlame.ViewModels
 		{
 			return Observable.Create<UpdateAvailableNotification>(async obs =>
 			{
-				string updateUrl = null;
-				try
-				{
-					using (var key = Registry.CurrentUser.OpenSubKey(@"Software\GitBlame"))
-					{
-						if (key != null)
-							updateUrl = key.GetValue("UpdateUrl") as string;
-					}
-				}
-				catch (SecurityException)
-				{
-				}
-				catch (UnauthorizedAccessException)
-				{
-				}
-
+				string updateUrl = AppModel.GetRegistrySetting("UpdateUrl");
 				using (var updateManager = new UpdateManager(updateUrl ?? @"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
 				{
 					try

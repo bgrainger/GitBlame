@@ -30,6 +30,26 @@
 					<Button Command="{x:Static src:Commands.ApplyUpdateCommand}" CommandParameter="{Binding CommandParameter}">Restart</Button>
 				</StackPanel>
 			</DataTemplate>
+
+			<DataTemplate DataType="{x:Type vm:VisualStudioNotification}">
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">Add as “External Tool”?</TextBlock>
+					<ItemsControl ItemsSource="{Binding Versions}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<CheckBox IsChecked="{Binding IsChecked}" Margin="0 0 16 0"><TextBlock Text="{Binding Title}"></TextBlock></CheckBox>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+					<Button Command="{Binding IntegrateCommand}" Width="60" Margin="4 0 4 0">Yes</Button>
+					<Button Command="{Binding DoNotIntegrateCommand}" Width="60" Margin="4 0 4 0">No</Button>
+				</StackPanel>
+			</DataTemplate>
 		</ResourceDictionary>
 	</Window.Resources>
 

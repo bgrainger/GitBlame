@@ -143,6 +143,7 @@
     <Compile Include="Converters\Converters.cs" />
     <Compile Include="Converters\NullableToVisibilityConverter.cs" />
     <Compile Include="JetBrains\Annotations.cs" />
+    <Compile Include="UnsafeNativeMethods.cs" />
     <Compile Include="Utility\DateTimeOffsetExtensions.cs" />
     <Compile Include="ViewModels\AppModel.cs" />
     <Compile Include="BlameControl.cs" />
@@ -168,6 +169,10 @@
     <Compile Include="ViewModels\NotificationBase.cs" />
     <Compile Include="ViewModels\OpenFileNotification.cs" />
     <Compile Include="ViewModels\UpdateAvailableNotification.cs" />
+    <Compile Include="ViewModels\VisualStudioIntegration.cs" />
+    <Compile Include="ViewModels\VisualStudioIntegrationStatus.cs" />
+    <Compile Include="ViewModels\VisualStudioIntegrationViewModel.cs" />
+    <Compile Include="ViewModels\VisualStudioNotification.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
