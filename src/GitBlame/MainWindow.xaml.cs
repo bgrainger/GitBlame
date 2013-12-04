@@ -23,7 +23,7 @@ namespace GitBlame
 			DataContext = m_model = model;
 			InitializeComponent();
 
-			model.WhenAny(x => x.Position, x => x.Value).Where(x => x != null).Subscribe(RunBlame);
+			model.WhenAny(x => x.Position, x => x.Value).Where(x => x != null && x.RepoPath != null).Subscribe(RunBlame);
 		}
 
 		private void RunBlame(BlamePositionModel position)
@@ -37,7 +37,7 @@ namespace GitBlame
 			var position = m_model.Position;
 			OpenFileDialog dialog = new OpenFileDialog
 			{
-				InitialDirectory = position == null ? null : Path.GetDirectoryName(position.GetFilePath()),
+				InitialDirectory = position == null ? null : Path.GetDirectoryName(position.FilePath),
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())

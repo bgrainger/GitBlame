@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Common.Logging;
 using DiffMatchPatch;
 using GitBlame.Utility;
 using LibGit2Sharp;
@@ -399,19 +400,23 @@ namespace GitBlame.Models
 			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
 
-		public static string GetRepositoryPath(string directory)
+		public static string TryGetRepositoryPath(string directory)
 		{
+			string currentDirectory = directory;
 			do
 			{
-				string gitDirectory = Path.Combine(directory, ".git");
+				string gitDirectory = Path.Combine(currentDirectory, ".git");
 				if (Directory.Exists(gitDirectory))
 					return gitDirectory;
 
-				directory = Path.GetDirectoryName(directory);
+				currentDirectory = Path.GetDirectoryName(currentDirectory);
 			}
-			while (directory != null);
+			while (currentDirectory != null);
 
-			throw new ApplicationException("Can't find .git directory for " + directory);
+			Log.WarnFormat("Can't find .git directory for {0}", directory);
+			return null;
 		}
+
+		static readonly ILog Log = LogManager.GetLogger("GitWrapper");
 	}
 }

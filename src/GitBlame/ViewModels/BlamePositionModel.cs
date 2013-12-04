@@ -12,8 +12,10 @@ namespace GitBlame.ViewModels
 			if (filePath == null)
 				throw new ArgumentNullException("filePath");
 
-			m_repoPath = GitWrapper.GetRepositoryPath(filePath);
-			m_fileName = filePath.Substring(Path.GetDirectoryName(m_repoPath).Length + 1);
+			m_filePath = filePath;
+			m_repoPath = GitWrapper.TryGetRepositoryPath(filePath);
+			if (m_repoPath != null)
+				m_fileName = filePath.Substring(Path.GetDirectoryName(m_repoPath).Length + 1);
 		}
 
 		public BlamePositionModel(string repoPath, string fileName)
@@ -25,6 +27,7 @@ namespace GitBlame.ViewModels
 
 			m_repoPath = repoPath;
 			m_fileName = fileName;
+			m_filePath = Path.Combine(Path.GetDirectoryName(m_repoPath), m_fileName);
 		}
 
 		public string RepoPath
@@ -52,14 +55,14 @@ namespace GitBlame.ViewModels
 		/// <summary>
 		/// Returns the theoretical path of the file on disk; this file may no longer physically exist if it was renamed during its history.
 		/// </summary>
-		/// <returns></returns>
-		public string GetFilePath()
+		public string FilePath
 		{
-			return Path.Combine(Path.GetDirectoryName(m_repoPath), m_fileName);
+			get { return m_filePath; }
 		}
 
 		readonly string m_repoPath;
 		readonly string m_fileName;
+		readonly string m_filePath;
 		string m_commitId;
 		int? m_lineNumber;
 	}
