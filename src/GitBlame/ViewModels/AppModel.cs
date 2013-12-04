@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security;
+using Common.Logging;
 using Microsoft.Win32;
 using ReactiveUI;
 
@@ -22,17 +23,20 @@ namespace GitBlame.ViewModels
 		{
 			try
 			{
+				Log.InfoFormat("Getting registry value for '{0}'", name);
 				using (var key = Registry.CurrentUser.OpenSubKey(c_registryKeyName))
 				{
 					if (key != null)
 						return key.GetValue(name) as string;
 				}
 			}
-			catch (SecurityException)
+			catch (SecurityException ex)
 			{
+				Log.ErrorFormat("SecurityException getting '{0}'", ex, name);
 			}
-			catch (UnauthorizedAccessException)
+			catch (UnauthorizedAccessException ex)
 			{
+				Log.ErrorFormat("SecurityException getting '{0}'", ex, name);
 			}
 
 			return null;
@@ -42,6 +46,7 @@ namespace GitBlame.ViewModels
 		{
 			try
 			{
+				Log.InfoFormat("Setting registry value '{0}' to '{1}'", name, value);
 				using (var key = Registry.CurrentUser.CreateSubKey(c_registryKeyName))
 				{
 					if (key != null)
@@ -51,17 +56,20 @@ namespace GitBlame.ViewModels
 					}
 				}
 			}
-			catch (SecurityException)
+			catch (SecurityException ex)
 			{
+				Log.ErrorFormat("SecurityException setting '{0}'", ex, name);
 			}
-			catch (UnauthorizedAccessException)
+			catch (UnauthorizedAccessException ex)
 			{
+				Log.ErrorFormat("UnauthorizedAccessException setting '{0}'", ex, name);
 			}
 
 			return false;
 		}
 
 		const string c_registryKeyName = @"Software\GitBlame";
+		static readonly ILog Log = LogManager.GetLogger("App");
 
 		MainWindowModel m_mainWindowModel;
 	}
