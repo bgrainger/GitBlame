@@ -24,8 +24,16 @@ namespace GitBlame
 
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{
-				m_analyticsClient.SubmitExceptionAsync((Exception) ea.ExceptionObject, true);
-				MessageBox.Show(ea.ExceptionObject.ToString());
+				var exception = ea.ExceptionObject as Exception;
+				if (exception != null)
+				{
+					Log.FatalFormat("Unhandled Exception: {0} {1}", exception, exception.GetType(), exception.Message);
+					m_analyticsClient.SubmitExceptionAsync(exception, true);
+				}
+				else
+				{
+					Log.FatalFormat("Unhandled Error: {0}", ea.ExceptionObject);
+				}
 			};
 
 			m_app = new AppModel();
