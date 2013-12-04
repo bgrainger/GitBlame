@@ -1,4 +1,6 @@
-﻿using System;
+﻿// #define DEVELOPMENT
+
+using System;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -20,7 +22,9 @@ namespace GitBlame
 			Log.DebugFormat("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
 
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
+#if !DEVELOPMENT
 			BugSense.Init("w8cfcffb");
+#endif
 
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{
@@ -28,7 +32,9 @@ namespace GitBlame
 				if (exception != null)
 				{
 					Log.FatalFormat("Unhandled Exception: {0} {1}", exception, exception.GetType(), exception.Message);
+#if !DEVELOPMENT
 					m_analyticsClient.SubmitExceptionAsync(exception, true);
+#endif
 				}
 				else
 				{
