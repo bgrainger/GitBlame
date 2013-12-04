@@ -20,7 +20,7 @@
 			<DataTemplate DataType="{x:Type vm:OpenFileNotification}">
 				<StackPanel Orientation="Horizontal">
 					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">Select a file to blame…</TextBlock>
-					<Button Command="{x:Static ApplicationCommands.Open}">Open</Button>
+					<Button Command="{x:Static ApplicationCommands.Open}" Width="60" Margin="4 0 4 0">Open</Button>
 				</StackPanel>
 			</DataTemplate>
 
