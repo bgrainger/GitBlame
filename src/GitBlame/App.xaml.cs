@@ -43,6 +43,9 @@ namespace GitBlame
 		{
 			base.OnStartup(e);
 
+			foreach (var arg in e.Args)
+				Log.InfoFormat("Command-line arg: {0}", arg);
+
 			MainWindowModel mainWindowModel = m_app.MainWindow;
 			BlamePositionModel position = null;
 

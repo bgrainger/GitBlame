@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using Common.Logging;
 using ReactiveUI;
 using Squirrel.Client;
 using Squirrel.Core;
@@ -32,11 +33,21 @@ namespace GitBlame.ViewModels
 		public BlamePositionModel Position
 		{
 			get { return m_position; }
-			private set { this.RaiseAndSetIfChanged(ref m_position, value); }
+			private set
+			{
+				if (value == null)
+					Log.Info("Position := (null)");
+				else
+					Log.InfoFormat("Position := Repo={0}, File={1}, CommitId={2}, LineNumber={3}", value.RepoPath, value.FileName, value.CommitId, value.LineNumber);
+				
+				this.RaiseAndSetIfChanged(ref m_position, value);
+			}
 		}
 
 		public void NavigateTo(BlamePositionModel position)
 		{
+			Log.DebugFormat("NavigateTo({0})", position == null ? "null" : "position");
+
 			if (Position != null)
 				m_positionHistory.Push(Position);
 			m_positionFuture.Clear();
@@ -47,6 +58,7 @@ namespace GitBlame.ViewModels
 		{
 			if (m_positionHistory.Count != 0)
 			{
+				Log.Debug("NavigateBack");
 				m_positionFuture.Push(Position);
 				Position = m_positionHistory.Pop();
 			}
@@ -56,6 +68,7 @@ namespace GitBlame.ViewModels
 		{
 			if (m_positionFuture.Count != 0)
 			{
+				Log.Debug("NavigateForward");
 				m_positionHistory.Push(Position);
 				Position = m_positionFuture.Pop();
 			}
@@ -103,6 +116,8 @@ namespace GitBlame.ViewModels
 				obs.OnCompleted();
 			});
 		}
+
+		static readonly ILog Log = LogManager.GetLogger("MainWindow");
 
 		readonly Stack<BlamePositionModel> m_positionHistory;
 		readonly Stack<BlamePositionModel> m_positionFuture;
