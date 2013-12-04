@@ -6,6 +6,7 @@ using System.Reactive.Subjects;
 using System.Reflection;
 using System.Security;
 using System.Threading.Tasks;
+using Common.Logging;
 using GitBlame.Utility;
 using Microsoft.Win32;
 
@@ -19,32 +20,41 @@ namespace GitBlame.ViewModels
 			Task.Run(() =>
 			{
 				string hardLinkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"GitBlame\GitBlame.exe");
-				UnsafeNativeMethods.DeleteFile(hardLinkPath);
+				Log.DebugFormat("hardLinkPath = {0}", hardLinkPath);
+				bool success = UnsafeNativeMethods.DeleteFile(hardLinkPath);
+				Log.InfoFormat("Deleting hard link {0}", success ? "succeeded" : "failed");
 
 				string exePath = Assembly.GetExecutingAssembly().Location;
+				Log.DebugFormat("exePath = {0}", exePath);
 				if (UnsafeNativeMethods.CreateHardLink(hardLinkPath, exePath, IntPtr.Zero))
 				{
 					var currentIntegrationStatus = GetCurrentIntegrationStatus();
+					Log.InfoFormat("Current integrations = {0}", string.Join(", ", currentIntegrationStatus.Select(x => "({0}, {1})".FormatInvariant(x.Key, x.Value))));
 					var possibleIntegrations = GetPossibleIntegrationStatus(hardLinkPath);
+					Log.InfoFormat("Possible integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1})".FormatInvariant(x.Version, x.IntegrationStatus))));
 
 					// remember versions the user has already declined to integrate with
 					foreach (var model in possibleIntegrations)
 					{
 						VisualStudioIntegrationStatus currentStatus;
 						if (model.IntegrationStatus == VisualStudioIntegrationStatus.Available &&
-							currentIntegrationStatus.TryGetValue(model.Version, out currentStatus) &&
-							currentStatus == VisualStudioIntegrationStatus.NotInstalled)
+						    currentIntegrationStatus.TryGetValue(model.Version, out currentStatus) &&
+						    currentStatus == VisualStudioIntegrationStatus.NotInstalled)
 						{
 							model.IntegrationStatus = VisualStudioIntegrationStatus.NotInstalled;
 						}
 
 						if (model.IntegrationStatus != VisualStudioIntegrationStatus.NotInstalled)
+						{
+							Log.InfoFormat("Setting IsChecked ({0}) true by default", model.Version);
 							model.IsChecked = true;
+						}
 					}
 
 					// show notification if there are any available versions to integrate with
 					if (possibleIntegrations.Any(x => x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
 					{
+						Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
 						var visualStudioNotification = new VisualStudioNotification(possibleIntegrations);
 						visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, hardLinkPath, visualStudioNotification, true));
 						visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, null, visualStudioNotification, false));
@@ -52,8 +62,13 @@ namespace GitBlame.ViewModels
 					}
 					else
 					{
+						Log.Info("No integrations available");
 						subject.OnCompleted();
 					}
+				}
+				else
+				{
+					Log.ErrorFormat("Creating hard link '{0}' -> '{1}' failed", hardLinkPath, exePath);
 				}
 			});
 			return subject;
@@ -66,6 +81,8 @@ namespace GitBlame.ViewModels
 
 			if (integrate)
 			{
+				Log.InfoFormat("Integrating with {0}", string.Join(", ", model.Versions.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
+
 				// TODO: Delete tools where !x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Installed
 				foreach (var version in model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
 				{
@@ -75,6 +92,7 @@ namespace GitBlame.ViewModels
 						{
 							if (key != null)
 							{
+								Log.InfoFormat("Creating External Tool for Visual Studio {0}", version.Version);
 								int tool = (int) key.GetValue("ToolNumKeys");
 								key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
 								key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
@@ -86,15 +104,18 @@ namespace GitBlame.ViewModels
 							}
 						}
 					}
-					catch (SecurityException)
+					catch (SecurityException ex)
 					{
+						Log.ErrorFormat("SecurityException integrating with {0}", ex, version.Version);
 					}
-					catch (UnauthorizedAccessException)
+					catch (UnauthorizedAccessException ex)
 					{
+						Log.ErrorFormat("SecurityException integrating with {0}", ex, version.Version);
 					}
 				}
 			}
 
+			Log.Info("Completing observer");
 			observer.OnNext(null);
 			observer.OnCompleted();
 		}
@@ -168,7 +189,7 @@ namespace GitBlame.ViewModels
 			return integrationStatus;
 		}
 
-
+		static readonly ILog Log = LogManager.GetLogger("VisualStudio");
 		static readonly string[] s_knownVisualStudioVersions = { "9", "10", "11" };
 	}
 }
