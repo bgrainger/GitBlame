@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using Bugsense.WPF;
+using Common.Logging;
 using GitBlame.Analytics;
 using GitBlame.ViewModels;
 
@@ -15,6 +17,8 @@ namespace GitBlame
 	{
 		public App()
 		{
+			Log.DebugFormat("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
+
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
 			BugSense.Init("w8cfcffb");
 
@@ -62,9 +66,11 @@ namespace GitBlame
 		protected override void OnExit(ExitEventArgs e)
 		{
 			m_analyticsClient.SubmitSessionEndAsync().Wait();
-
+			Log.Debug("Shutting down application.");
 			base.OnExit(e);
 		}
+
+		static readonly ILog Log = LogManager.GetLogger("App");
 
 		readonly AppModel m_app;
 		readonly GoogleAnalyticsClient m_analyticsClient;
