@@ -23,13 +23,20 @@ namespace GitBlame
 			DataContext = m_model = model;
 			InitializeComponent();
 
-			model.WhenAny(x => x.Position, x => x.Value).Where(x => x != null && x.RepoPath != null).Subscribe(RunBlame);
+			model.WhenAny(x => x.Position, x => x.Value).Subscribe(RunBlame);
 		}
 
 		private void RunBlame(BlamePositionModel position)
 		{
-			BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName, position.CommitId);
-			Blame.SetBlameResult(blame, position.LineNumber ?? 1);
+			if (position == null || position.RepoPath == null)
+			{
+				Blame.ClearBlameResult();
+			}
+			else
+			{
+				BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName, position.CommitId);
+				Blame.SetBlameResult(blame, position.LineNumber ?? 1);
+			}
 		}
 
 		private void OnOpen(object sender, ExecutedRoutedEventArgs e)

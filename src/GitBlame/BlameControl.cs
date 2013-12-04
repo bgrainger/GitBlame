@@ -94,27 +94,38 @@ namespace GitBlame
 			RedrawSoon();
 		}
 
+		internal void ClearBlameResult()
+		{
+			m_blame = null;
+			m_layout = null;
+			SetHorizontalScrollInfo(1, null, 0);
+			SetVerticalScrollInfo(1, null, 0);
+			InvalidateMeasure();
+			RedrawSoon();
+		}
+
 		protected override Size ArrangeOverride(Size finalSize)
 		{
-			if (m_layout == null)
-				return new Size();
+			if (m_layout != null)
+			{
+				m_layout = m_layout.WithRenderSize(finalSize);
+				SetVerticalScrollInfo(null, finalSize.Height / m_layout.LineHeight, null);
+				RedrawSoon();
+			}
 
-			m_layout = m_layout.WithRenderSize(finalSize);
-			SetVerticalScrollInfo(null, finalSize.Height / m_layout.LineHeight, null);
-			RedrawSoon();
 			return finalSize;
 		}
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
-			if (m_layout == null)
-				return new Size();
+			if (m_layout != null)
+			{
+				Typeface typeface = TextElementUtility.GetTypeface(this);
+				m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
 
-			Typeface typeface = TextElementUtility.GetTypeface(this);
-			m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
-
-			FormattedText text = CreateFormattedText("8888", typeface);
-			m_layout = m_layout.WithLineHeight(text.Height);
+				FormattedText text = CreateFormattedText("8888", typeface);
+				m_layout = m_layout.WithLineHeight(text.Height);
+			}
 
 			return availableSize;
 		}
@@ -230,19 +241,18 @@ namespace GitBlame
 
 		private void Render()
 		{
-			if (m_blame == null)
-				return;
-
 			using (DrawingContext drawingContext = m_visual.RenderOpen())
 				Render(drawingContext);
 		}
 
 		private void Render(DrawingContext drawingContext)
 		{
+			drawingContext.DrawRectangle(Brushes.White, null, new Rect(new Point(), RenderSize));
+			if (m_blame == null || m_emSize == 0)
+				return;
+
 			Typeface typeface = TextElementUtility.GetTypeface(this);
 			BlameLayout layout = m_layout.WithRenderSize(RenderSize);
-
-			drawingContext.DrawRectangle(Brushes.White, null, new Rect(new Point(), RenderSize));
 
 			foreach (Rect newLineRectangle in layout.NewLines)
 				drawingContext.DrawRectangle(m_newLineBrush, null, newLineRectangle);
