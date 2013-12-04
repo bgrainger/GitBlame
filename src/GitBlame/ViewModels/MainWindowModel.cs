@@ -89,32 +89,47 @@ namespace GitBlame.ViewModels
 			return Observable.Create<UpdateAvailableNotification>(async obs =>
 			{
 				string updateUrl = AppModel.GetRegistrySetting("UpdateUrl");
+				Log.DebugFormat("UpdateUrl = {0}", updateUrl);
 				using (var updateManager = new UpdateManager(updateUrl ?? @"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
 				{
 					try
 					{
 						UpdateInfo updateInfo = await updateManager.CheckForUpdate();
 						var releases = updateInfo == null ? new List<ReleaseEntry>() : updateInfo.ReleasesToApply.ToList();
+						if (updateInfo == null)
+							Log.Info("CheckForUpdate returned (null)");
+						else
+							Log.InfoFormat("CheckForUpdate: Current=({0}), Future=({1}), {2} ReleasesToApply", ToLog(updateInfo.CurrentlyInstalledVersion), ToLog(updateInfo.FutureReleaseEntry), releases.Count);
+
 						if (releases.Count != 0)
 						{
 							await updateManager.DownloadReleases(releases);
+							Log.Info("Downloaded releases");
 							var results = await updateManager.ApplyReleases(updateInfo);
+							Log.InfoFormat("ApplyReleases: {0}", string.Join(", ", results));
 
 							if (results.Any())
 								obs.OnNext(new UpdateAvailableNotification(results[0]));
 						}
 					}
-					catch (InvalidOperationException)
+					catch (InvalidOperationException ex)
 					{
 						// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
+						Log.ErrorFormat("CheckForUpdates failed: {0}", ex, ex.Message);
 					}
-					catch (TimeoutException)
+					catch (TimeoutException ex)
 					{
 						// Failed to check for updates; try again the next time the app is run
+						Log.ErrorFormat("CheckForUpdates timed out: {0}", ex, ex.Message);
 					}
 				}
 				obs.OnCompleted();
 			});
+		}
+
+		private static string ToLog(ReleaseEntry entry)
+		{
+			return entry == null ? "null" : entry.EntryAsString;
 		}
 
 		static readonly ILog Log = LogManager.GetLogger("MainWindow");
