@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Subjects;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Security;
-using System.Threading.Tasks;
 using Common.Logging;
 using GitBlame.Utility;
 using Microsoft.Win32;
@@ -15,8 +16,7 @@ namespace GitBlame.ViewModels
 	{
 		public static IObservable<VisualStudioNotification> Check()
 		{
-			var subject = new Subject<VisualStudioNotification>();
-			Task.Run(() =>
+			return Observable.Create<VisualStudioNotification>(obs =>
 			{
 				var exePath = Assembly.GetExecutingAssembly().Location;
 
@@ -48,17 +48,18 @@ namespace GitBlame.ViewModels
 				{
 					Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
 					var visualStudioNotification = new VisualStudioNotification(possibleIntegrations);
-					visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, exePath, visualStudioNotification, true));
-					visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, null, visualStudioNotification, false));
-					subject.OnNext(visualStudioNotification);
+					visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(obs, exePath, visualStudioNotification, true));
+					visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(obs, null, visualStudioNotification, false));
+					obs.OnNext(visualStudioNotification);
 				}
 				else
 				{
 					Log.Info("No integrations available");
-					subject.OnCompleted();
+					obs.OnCompleted();
 				}
-			});
-			return subject;
+
+				return Disposable.Empty;
+			}).SubscribeOn(TaskPoolScheduler.Default);
 		}
 
 		public static void ReintegrateWithVisualStudio(string newCommandPath)
