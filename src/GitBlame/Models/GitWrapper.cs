@@ -86,7 +86,7 @@ namespace GitBlame.Models
 				arguments.AddRange(new[] { "--", fileName });
 				var results = git.Run(new ProcessRunSettings(arguments.ToArray()));
 				if (results.ExitCode != 0)
-					throw new ApplicationException(string.Format(CultureInfo.InvariantCulture, "git blame exited with code {0}", results.ExitCode));
+					return;
 
 				// parse output
 				List<Block> blocks = new List<Block>();
