@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Common.Logging;
 using GitBlame.Utility;
 using Microsoft.Win32;
 
@@ -72,7 +73,18 @@ namespace GitBlame.Analytics
 
 			// build the URL; use SSL to prevent casual sniffing of the data
 			Uri uri = new Uri("https://ssl.google-analytics.com/collect");
-			await m_httpClient.PostAsync(uri, new StringContent(sb.ToString())).ConfigureAwait(false);
+			try
+			{
+				await m_httpClient.PostAsync(uri, new StringContent(sb.ToString())).ConfigureAwait(false);
+			}
+			catch (HttpRequestException ex)
+			{
+				Log.WarnFormat("Couldn't POST to Google Analytics: {0}", ex, ex);
+			}
+			catch (TaskCanceledException ex)
+			{
+				Log.WarnFormat("Couldn't POST to Google Analytics: {0}.", ex, ex);
+			}
 		}
 
 		private static Guid LoadOrCreateClientId()
@@ -117,6 +129,8 @@ namespace GitBlame.Analytics
 			sb.Append('=');
 			sb.Append(Uri.EscapeDataString(value));
 		}
+
+		static readonly ILog Log = LogManager.GetLogger("GoogleAnalytics");
 
 		readonly string m_trackingId;
 		readonly string m_appName;
