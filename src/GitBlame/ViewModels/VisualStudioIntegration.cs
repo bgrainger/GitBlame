@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Reflection;
@@ -19,56 +18,44 @@ namespace GitBlame.ViewModels
 			var subject = new Subject<VisualStudioNotification>();
 			Task.Run(() =>
 			{
-				string hardLinkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"GitBlame\GitBlame.exe");
-				Log.DebugFormat("hardLinkPath = {0}", hardLinkPath);
-				bool success = UnsafeNativeMethods.DeleteFile(hardLinkPath);
-				Log.InfoFormat("Deleting hard link {0}", success ? "succeeded" : "failed");
+				var exePath = Assembly.GetExecutingAssembly().Location;
 
-				string exePath = Assembly.GetExecutingAssembly().Location;
-				Log.DebugFormat("exePath = {0}", exePath);
-				if (UnsafeNativeMethods.CreateHardLink(hardLinkPath, exePath, IntPtr.Zero))
+				var currentIntegrationStatus = GetCurrentIntegrationStatus();
+				Log.InfoFormat("Current integrations = {0}", string.Join(", ", currentIntegrationStatus.Select(x => "({0}, {1})".FormatInvariant(x.Key, x.Value))));
+				var possibleIntegrations = GetPossibleIntegrationStatus(exePath);
+				Log.InfoFormat("Possible integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1})".FormatInvariant(x.Version, x.IntegrationStatus))));
+
+				// remember versions the user has already declined to integrate with
+				foreach (var model in possibleIntegrations)
 				{
-					var currentIntegrationStatus = GetCurrentIntegrationStatus();
-					Log.InfoFormat("Current integrations = {0}", string.Join(", ", currentIntegrationStatus.Select(x => "({0}, {1})".FormatInvariant(x.Key, x.Value))));
-					var possibleIntegrations = GetPossibleIntegrationStatus(hardLinkPath);
-					Log.InfoFormat("Possible integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1})".FormatInvariant(x.Version, x.IntegrationStatus))));
-
-					// remember versions the user has already declined to integrate with
-					foreach (var model in possibleIntegrations)
+					VisualStudioIntegrationStatus currentStatus;
+					if (model.IntegrationStatus == VisualStudioIntegrationStatus.Available &&
+						currentIntegrationStatus.TryGetValue(model.Version, out currentStatus) &&
+						currentStatus == VisualStudioIntegrationStatus.NotInstalled)
 					{
-						VisualStudioIntegrationStatus currentStatus;
-						if (model.IntegrationStatus == VisualStudioIntegrationStatus.Available &&
-						    currentIntegrationStatus.TryGetValue(model.Version, out currentStatus) &&
-						    currentStatus == VisualStudioIntegrationStatus.NotInstalled)
-						{
-							model.IntegrationStatus = VisualStudioIntegrationStatus.NotInstalled;
-						}
-
-						if (model.IntegrationStatus != VisualStudioIntegrationStatus.NotInstalled)
-						{
-							Log.InfoFormat("Setting IsChecked ({0}) true by default", model.Version);
-							model.IsChecked = true;
-						}
+						model.IntegrationStatus = VisualStudioIntegrationStatus.NotInstalled;
 					}
 
-					// show notification if there are any available versions to integrate with
-					if (possibleIntegrations.Any(x => x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
+					if (model.IntegrationStatus != VisualStudioIntegrationStatus.NotInstalled)
 					{
-						Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
-						var visualStudioNotification = new VisualStudioNotification(possibleIntegrations);
-						visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, hardLinkPath, visualStudioNotification, true));
-						visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, null, visualStudioNotification, false));
-						subject.OnNext(visualStudioNotification);
+						Log.InfoFormat("Setting IsChecked ({0}) true by default", model.Version);
+						model.IsChecked = true;
 					}
-					else
-					{
-						Log.Info("No integrations available");
-						subject.OnCompleted();
-					}
+				}
+
+				// show notification if there are any available versions to integrate with
+				if (possibleIntegrations.Any(x => x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
+				{
+					Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
+					var visualStudioNotification = new VisualStudioNotification(possibleIntegrations);
+					visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, exePath, visualStudioNotification, true));
+					visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(subject, null, visualStudioNotification, false));
+					subject.OnNext(visualStudioNotification);
 				}
 				else
 				{
-					Log.ErrorFormat("Creating hard link '{0}' -> '{1}' failed", hardLinkPath, exePath);
+					Log.Info("No integrations available");
+					subject.OnCompleted();
 				}
 			});
 			return subject;

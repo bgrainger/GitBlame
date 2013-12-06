@@ -152,7 +152,6 @@
     <Compile Include="Converters\Converters.cs" />
     <Compile Include="Converters\NullableToVisibilityConverter.cs" />
     <Compile Include="JetBrains\Annotations.cs" />
-    <Compile Include="UnsafeNativeMethods.cs" />
     <Compile Include="Utility\DateTimeOffsetExtensions.cs" />
     <Compile Include="ViewModels\AppModel.cs" />
     <Compile Include="BlameControl.cs" />
