@@ -61,6 +61,13 @@ namespace GitBlame.ViewModels
 			return subject;
 		}
 
+		public static void ReintegrateWithVisualStudio(string newCommandPath)
+		{
+			var current = GetCurrentIntegrationStatus();
+			string exePath = Assembly.GetExecutingAssembly().Location;
+			IntegrateWithVisualStudio(newCommandPath, GetPossibleIntegrationStatus(exePath).Where(x => current.GetValueOrDefault(x.Version) == VisualStudioIntegrationStatus.Installed));
+		}
+
 		private static void IntegrateWithVisualStudio(IObserver<VisualStudioNotification> observer, string commandPath, VisualStudioNotification model, bool integrate)
 		{
 			string preference = string.Join(";", model.Versions.Select(x => GetEffectivePreference(integrate, x)));
@@ -69,42 +76,49 @@ namespace GitBlame.ViewModels
 			if (integrate)
 			{
 				Log.InfoFormat("Integrating with {0}", string.Join(", ", model.Versions.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
-
 				// TODO: Delete tools where !x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Installed
-				foreach (var version in model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
-				{
-					try
-					{
-						using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\VisualStudio\{0}.0\External Tools".FormatInvariant(version.Version)))
-						{
-							if (key != null)
-							{
-								Log.InfoFormat("Creating External Tool for Visual Studio {0}", version.Version);
-								int tool = (int) key.GetValue("ToolNumKeys");
-								key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
-								key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
-								key.SetValue("ToolDir{0}".FormatInvariant(tool), "$(ItemDir)");
-								key.SetValue("ToolOpt{0}".FormatInvariant(tool), 17);
-								key.SetValue("ToolSourceKey{0}".FormatInvariant(tool), "");
-								key.SetValue("ToolTitle{0}".FormatInvariant(tool), "Git&Blame");
-								key.SetValue("ToolNumKeys", tool + 1);
-							}
-						}
-					}
-					catch (SecurityException ex)
-					{
-						Log.ErrorFormat("SecurityException integrating with {0}", ex, version.Version);
-					}
-					catch (UnauthorizedAccessException ex)
-					{
-						Log.ErrorFormat("SecurityException integrating with {0}", ex, version.Version);
-					}
-				}
+				IntegrateWithVisualStudio(commandPath, model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available));
 			}
 
 			Log.Info("Completing observer");
 			observer.OnNext(null);
 			observer.OnCompleted();
+		}
+
+		private static void IntegrateWithVisualStudio(string commandPath, IEnumerable<VisualStudioIntegrationViewModel> versions)
+		{
+			foreach (var model in versions)
+			{
+				string version = model.Version;
+				try
+				{
+					using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\VisualStudio\{0}.0\External Tools".FormatInvariant(version)))
+					{
+						if (key != null)
+						{
+							int toolCount = (int) key.GetValue("ToolNumKeys");
+							int tool = model.ToolIndex ?? toolCount;
+							Log.InfoFormat("Creating External Tool #{0} for Visual Studio {1}", tool, version);
+							key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
+							key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
+							key.SetValue("ToolDir{0}".FormatInvariant(tool), "$(ItemDir)");
+							key.SetValue("ToolOpt{0}".FormatInvariant(tool), 17);
+							key.SetValue("ToolSourceKey{0}".FormatInvariant(tool), "");
+							key.SetValue("ToolTitle{0}".FormatInvariant(tool), "Git&Blame");
+							if (tool >= toolCount)
+								key.SetValue("ToolNumKeys", tool + 1);
+						}
+					}
+				}
+				catch (SecurityException ex)
+				{
+					Log.ErrorFormat("SecurityException integrating with {0}", ex, version);
+				}
+				catch (UnauthorizedAccessException ex)
+				{
+					Log.ErrorFormat("SecurityException integrating with {0}", ex, version);
+				}
+			}
 		}
 
 		private static string GetEffectivePreference(bool integrate, VisualStudioIntegrationViewModel model)

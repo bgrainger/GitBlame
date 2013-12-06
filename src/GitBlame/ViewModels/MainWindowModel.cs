@@ -110,7 +110,11 @@ namespace GitBlame.ViewModels
 							Log.InfoFormat("ApplyReleases: {0}", string.Join(", ", results));
 
 							if (results.Any())
-								obs.OnNext(new UpdateAvailableNotification(results[0]));
+							{
+								string newPath = results[0];
+								VisualStudioIntegration.ReintegrateWithVisualStudio(newPath);
+								obs.OnNext(new UpdateAvailableNotification(newPath));
+							}
 						}
 					}
 					catch (InvalidOperationException ex)
