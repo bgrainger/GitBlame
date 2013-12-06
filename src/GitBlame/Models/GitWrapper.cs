@@ -64,11 +64,8 @@ namespace GitBlame.Models
 						}
 					}).FirstOrDefault(x => x != null);
 
-				var gitCommit = repo.Head.Tip;
-				var commit = new Commit(gitCommit.Sha,
-					new Person(gitCommit.Author.Name, gitCommit.Author.Email), gitCommit.Author.When,
-					new Person(gitCommit.Committer.Name, gitCommit.Committer.Email), gitCommit.Committer.When, gitCommit.MessageShort,
-					null, null);
+				var notCommittedPerson = new Person("Not Committed Yet", "not.committed.yet");
+				var commit = new Commit(UncommittedChangesCommitId, notCommittedPerson, DateTimeOffset.Now, notCommittedPerson, DateTimeOffset.Now, "", null, null);
 
 				// create a fake blame result that assigns all the code to the HEAD revision
 				blameResult = new BlameResult(webRootUrl, new[] { new Block(1, currentLines.Length, commit, fileName, 1) }.AsReadOnly(),
