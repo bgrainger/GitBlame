@@ -38,7 +38,8 @@ namespace GitBlame.ViewModels
 			{
 				{ "9", "2008" },
 				{ "10", "2010" },
-				{ "11", "2012" }
+				{ "11", "2012" },
+				{ "12", "2013" }
 			};
 
 		string m_version;

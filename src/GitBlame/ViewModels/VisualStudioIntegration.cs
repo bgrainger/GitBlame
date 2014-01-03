@@ -192,6 +192,6 @@ namespace GitBlame.ViewModels
 		}
 
 		static readonly ILog Log = LogManager.GetLogger("VisualStudio");
-		static readonly string[] s_knownVisualStudioVersions = { "9", "10", "11" };
+		static readonly string[] s_knownVisualStudioVersions = { "9", "10", "11", "12" };
 	}
 }
