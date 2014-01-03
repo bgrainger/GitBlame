@@ -39,9 +39,14 @@ namespace GitBlame.Analytics
 			return SubmitAsync("t", "exception", "exd", ex.GetType().Name, "exf", isFatal ? "1" : "0");
 		}
 
+		public Task SubmitSessionStartAsync()
+		{
+			return SubmitAsync("t", "event", "sc", "start", "ec", "Session", "ea", "Start");
+		}
+
 		public Task SubmitSessionEndAsync()
 		{
-			return SubmitAsync("t", "appview", "sc", "end");
+			return SubmitAsync("t", "event", "sc", "end", "ec", "Session", "ea", "End");
 		}
 
 		private async Task SubmitAsync(params string[] namesAndValues)
@@ -65,17 +70,13 @@ namespace GitBlame.Analytics
 			AddParameter(sb, "sd", screenBitDepth);
 			AddParameter(sb, "ul", language);
 			AddParameter(sb, "fl", m_provider.Is64BitOperatingSystem ? "64-bit" : "32-bit");
-			if (!m_hasSubmittedSessionStart)
-			{
-				AddParameter(sb, "sc", "start");
-				m_hasSubmittedSessionStart = true;
-			}
 
 			// build the URL; use SSL to prevent casual sniffing of the data
 			Uri uri = new Uri("https://ssl.google-analytics.com/collect");
 			try
 			{
 				await m_httpClient.PostAsync(uri, new StringContent(sb.ToString())).ConfigureAwait(false);
+				Log.InfoFormat("Successfully posted {0}", sb.ToString());
 			}
 			catch (HttpRequestException ex)
 			{
@@ -138,6 +139,5 @@ namespace GitBlame.Analytics
 		readonly string m_appVersion;
 		readonly Guid m_clientId;
 		readonly HttpClient m_httpClient;
-		bool m_hasSubmittedSessionStart;
 	}
 }

@@ -55,6 +55,8 @@ namespace GitBlame
 		{
 			base.OnStartup(e);
 
+			var sessionStart = m_analyticsClient.SubmitSessionStartAsync();
+
 			foreach (var arg in e.Args)
 				Log.InfoFormat("Command-line arg: {0}", arg);
 
@@ -83,6 +85,7 @@ namespace GitBlame
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
 
+			await sessionStart;
 			await m_analyticsClient.SubmitAppViewAsync("MainWindow");
 		}
 
