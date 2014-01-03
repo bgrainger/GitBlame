@@ -4,6 +4,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Runtime;
 using System.Windows;
 using Bugsense.WPF;
 using Common.Logging;
@@ -19,6 +20,11 @@ namespace GitBlame
 	{
 		public App()
 		{
+			string profilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"GitBlame\Profile");
+			Directory.CreateDirectory(profilePath);
+			ProfileOptimization.SetProfileRoot(profilePath);
+			ProfileOptimization.StartProfile("Startup");
+
 			Log.DebugFormat("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
 
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());

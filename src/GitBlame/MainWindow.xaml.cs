@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reactive.Linq;
+using System.Runtime;
 using System.Windows;
 using System.Windows.Input;
 using GitBlame.Models;
@@ -34,6 +35,7 @@ namespace GitBlame
 			}
 			else
 			{
+				ProfileOptimization.StartProfile("Blame");
 				BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName, position.CommitId);
 				Blame.SetBlameResult(blame, position.LineNumber ?? 1);
 			}
