@@ -11,7 +11,7 @@ Visit the [main site](http://bradleygrainger.com/GitBlame/) to get the latest in
 This project requires Visual Studio 2012 (or better). After cloning the
 repository, open `GitBlame\GitBlame.sln` and build it.
 
-[msysgit](http://code.google.com/p/msysgit/) must be installed for GitBlame
+[msysgit](http://msysgit.github.io/) must be installed for GitBlame
 to function correctly.
 
 ## License
