@@ -381,18 +381,16 @@ namespace GitBlame.Models
 
 		private static string GetGitPath()
 		{
-			string[] parentFolders = new[]
+			string[] gitPaths =
 			{
-				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-				@"D:\Program Files (x86)",
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Git\bin\git.exe"),
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Git\bin\git.exe"),
+				@"D:\Program Files (x86)\Git\bin\git.exe",
+				@"C:\msysgit\bin\git.exe"
 			};
 
-			foreach (string folder in parentFolders)
-			{
-				string gitPath = Path.Combine(folder, @"Git\bin\git.exe");
-				if (File.Exists(gitPath))
-					return gitPath;
-			}
+			foreach (string gitPath in gitPaths.Where(x => File.Exists(x)))
+				return gitPath;
 
 			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
