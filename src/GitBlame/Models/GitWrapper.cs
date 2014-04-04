@@ -394,6 +394,12 @@ namespace GitBlame.Models
 					return gitPath;
 			}
 
+			foreach (string path in s_defaultGitPaths)
+			{
+				if (File.Exists(path))
+					return path;
+			}
+			
 			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
 
@@ -415,5 +421,10 @@ namespace GitBlame.Models
 		}
 
 		static readonly ILog Log = LogManager.GetLogger("GitWrapper");
+		static readonly IEnumerable<string> s_defaultGitPaths = new[]
+		{
+			Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Git\bin\git.exe"),
+			@"C:\msysgit\bin\git.exe"
+		};
 	}
 }
