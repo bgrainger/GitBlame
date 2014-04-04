@@ -121,6 +121,11 @@ namespace GitBlame
 			}
 		}
 
+		private void OnExitApplication(object sender, ExecutedRoutedEventArgs e)
+		{
+			Application.Current.Shutdown(0);
+		}
+
 		readonly MainWindowModel m_model;
 	}
 }
