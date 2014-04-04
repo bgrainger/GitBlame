@@ -13,8 +13,13 @@
 		<CommandBinding Command="{x:Static src:Commands.BlamePreviousCommand}" Executed="OnBlamePrevious" CanExecute="OnCanBlamePrevious" />
 		<CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
 		<CommandBinding Command="{x:Static src:Commands.ApplyUpdateCommand}" Executed="OnApplyUpdate" />
+		<CommandBinding Command="{x:Static src:Commands.ExitApplicationCommand}" Executed="OnExitApplication" />
 	</Window.CommandBindings>
-
+	
+	<Window.InputBindings>
+		<KeyBinding Key="Escape" Command="{x:Static src:Commands.ExitApplicationCommand}" />
+	</Window.InputBindings>
+	
 	<Window.Resources>
 		<ResourceDictionary>
 			<DataTemplate DataType="{x:Type vm:OpenFileNotification}">

@@ -9,5 +9,7 @@ namespace GitBlame
 		public static RoutedCommand ViewAtGitHubCommand = new RoutedCommand();
 
 		public static RoutedCommand ApplyUpdateCommand = new RoutedCommand();
+
+		public static RoutedCommand ExitApplicationCommand = new RoutedCommand();
 	}
 }
