@@ -69,6 +69,19 @@ namespace GitBlame
 			get { return m_layout == null ? default(int?) : m_layout.TopLineNumber; }
 		}
 
+		public int? TotalLines
+		{
+			get { return m_layout == null ? default(int?) : m_lineCount; }
+		}
+
+		public void GotoLineNumber(int topLineNumber = 1)
+		{
+			SetVerticalScrollInfo(m_lineCount + 1, null, topLineNumber - 1);
+			InvalidateMeasure();
+			OnScrollChanged();
+			RedrawSoon();
+		}
+
 		internal void SetBlameResult(BlameResult blame, int topLineNumber = 1)
 		{
 			if (m_blameSubscription != null)
@@ -88,10 +101,7 @@ namespace GitBlame
 			m_commitAlpha.Clear();
 			CreateBrushesForAuthors(m_layout.AuthorCount);
 
-			SetVerticalScrollInfo(m_lineCount + 1, null, topLineNumber - 1);
-			InvalidateMeasure();
-			OnScrollChanged();
-			RedrawSoon();
+			GotoLineNumber(topLineNumber - 1);
 		}
 
 		internal void ClearBlameResult()
