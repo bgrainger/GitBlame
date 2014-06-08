@@ -17,7 +17,7 @@ namespace GitBlame
 			base.OnActivated(e);
 
 			BlameControl blame = (BlameControl)DataContext;
-			Caption.Content = "Line number (1 - {0}):".FormatInvariant(blame.TotalLines);
+			Caption.Content = "Line number (1–{0}):".FormatInvariant(blame.TotalLines);
 
 			LineNumber.Text = blame.TopLineNumber.ToString();
 			LineNumber.Focus();

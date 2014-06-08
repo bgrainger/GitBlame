@@ -5,7 +5,7 @@
 	
 	<Grid>
 		<StackPanel Margin="10">
-			<Label x:Name="Caption" Padding="0, 4"  Content="Line number (1 - 100):" />
+			<Label x:Name="Caption" Padding="0, 4"  Content="Line number (1–100):" />
 			<TextBox x:Name="LineNumber" Text="50" />
 			<StackPanel Margin="0,10" Orientation="Horizontal" HorizontalAlignment="Right">
 				<Button Margin="10,0" Padding="10, 4" Content="OK" IsDefault="True" Click="OnGoToLine"/>
