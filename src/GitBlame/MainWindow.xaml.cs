@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reactive.Linq;
 using System.Runtime;
 using System.Windows;
 using System.Windows.Input;
@@ -124,6 +123,17 @@ namespace GitBlame
 		private void OnExitApplication(object sender, ExecutedRoutedEventArgs e)
 		{
 			Application.Current.Shutdown(0);
+		}
+
+		private void OnShowGotoLineInput(object sender, ExecutedRoutedEventArgs e)
+		{
+			GoToLine gotoDialog = new GoToLine {DataContext = Blame};
+			gotoDialog.ShowDialog();
+		}
+
+		private void OnCanShowGotoLineInput(object sender, CanExecuteRoutedEventArgs e)
+		{
+			e.CanExecute = m_model.Position != null;
 		}
 
 		readonly MainWindowModel m_model;

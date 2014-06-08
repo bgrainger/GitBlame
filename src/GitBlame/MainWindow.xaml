@@ -14,10 +14,12 @@
 		<CommandBinding Command="{x:Static src:Commands.ViewAtGitHubCommand}" Executed="OnViewAtGitHub" CanExecute="OnCanViewAtGitHub" />
 		<CommandBinding Command="{x:Static src:Commands.ApplyUpdateCommand}" Executed="OnApplyUpdate" />
 		<CommandBinding Command="{x:Static src:Commands.ExitApplicationCommand}" Executed="OnExitApplication" />
+		<CommandBinding Command="{x:Static src:Commands.ShowGotoLineInputCommand}" Executed="OnShowGotoLineInput" CanExecute="OnCanShowGotoLineInput" />
 	</Window.CommandBindings>
 	
 	<Window.InputBindings>
 		<KeyBinding Key="Escape" Command="{x:Static src:Commands.ExitApplicationCommand}" />
+		<KeyBinding Key="G" Modifiers="Control" Command="{x:Static src:Commands.ShowGotoLineInputCommand}" />
 	</Window.InputBindings>
 	
 	<Window.Resources>
