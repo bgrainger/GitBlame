@@ -74,7 +74,7 @@ namespace GitBlame
 			get { return m_layout == null ? default(int?) : m_lineCount; }
 		}
 
-		public void GotoLineNumber(int topLineNumber = 1)
+		public void GoToLineNumber(int topLineNumber = 1)
 		{
 			SetVerticalScrollInfo(m_lineCount + 1, null, topLineNumber - 1);
 			InvalidateMeasure();
@@ -101,7 +101,7 @@ namespace GitBlame
 			m_commitAlpha.Clear();
 			CreateBrushesForAuthors(m_layout.AuthorCount);
 
-			GotoLineNumber(topLineNumber - 1);
+			GoToLineNumber(topLineNumber - 1);
 		}
 
 		internal void ClearBlameResult()

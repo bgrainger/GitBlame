@@ -33,7 +33,7 @@ namespace GitBlame
 				lineNumber > 0 && 
 				lineNumber <= blame.TotalLines)
 			{
-				blame.GotoLineNumber(lineNumber);
+				blame.GoToLineNumber(lineNumber);
 				Close();
 			}
 		}

@@ -12,6 +12,6 @@ namespace GitBlame
 
 		public static RoutedCommand ExitApplicationCommand = new RoutedCommand();
 
-		public static RoutedCommand ShowGotoLineInputCommand = new RoutedCommand();
+		public static RoutedCommand ShowGoToLineInputCommand = new RoutedCommand();
 	}
 }

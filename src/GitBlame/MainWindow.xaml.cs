@@ -125,13 +125,13 @@ namespace GitBlame
 			Application.Current.Shutdown(0);
 		}
 
-		private void OnShowGotoLineInput(object sender, ExecutedRoutedEventArgs e)
+		private void OnShowGoToLineInput(object sender, ExecutedRoutedEventArgs e)
 		{
 			GoToLine gotoDialog = new GoToLine {DataContext = Blame};
 			gotoDialog.ShowDialog();
 		}
 
-		private void OnCanShowGotoLineInput(object sender, CanExecuteRoutedEventArgs e)
+		private void OnCanShowGoToLineInput(object sender, CanExecuteRoutedEventArgs e)
 		{
 			e.CanExecute = m_model.Position != null;
 		}
