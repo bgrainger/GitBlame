@@ -395,21 +395,33 @@ namespace GitBlame.Models
 			throw new ApplicationException("Can't find msysgit installed on the system.");
 		}
 
-		public static string TryGetRepositoryPath(string directory)
+		public static bool SplitRepositoryPath(string filePath, out string gitDirectory, out string fileName)
 		{
-			string currentDirectory = directory;
+			string currentDirectory = filePath;
 			do
 			{
-				string gitDirectory = Path.Combine(currentDirectory, ".git");
+				gitDirectory = Path.Combine(currentDirectory, ".git");
 				if (Directory.Exists(gitDirectory))
-					return gitDirectory;
+				{
+					string probeFileName = filePath.Substring(currentDirectory.Length + 1);
+					using (Repository repo = new Repository(gitDirectory))
+					{
+						var entry = repo.Index.FirstOrDefault(x => string.Equals(x.Path, probeFileName, StringComparison.OrdinalIgnoreCase));
+						if (entry != null)
+						{
+							fileName = entry.Path;
+							return true;
+						}
+					}
+				}
 
 				currentDirectory = Path.GetDirectoryName(currentDirectory);
 			}
 			while (currentDirectory != null);
 
-			Log.WarnFormat("Can't find .git directory for {0}", directory);
-			return null;
+			Log.WarnFormat("Can't find .git directory for {0}", filePath);
+			fileName = null;
+			return false;
 		}
 
 		static readonly ILog Log = LogManager.GetLogger("GitWrapper");

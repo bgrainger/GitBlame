@@ -13,9 +13,7 @@ namespace GitBlame.ViewModels
 				throw new ArgumentNullException("filePath");
 
 			m_filePath = filePath;
-			m_repoPath = GitWrapper.TryGetRepositoryPath(filePath);
-			if (m_repoPath != null)
-				m_fileName = filePath.Substring(Path.GetDirectoryName(m_repoPath).Length + 1);
+			GitWrapper.SplitRepositoryPath(filePath, out m_repoPath, out m_fileName);
 		}
 
 		public BlamePositionModel(string repoPath, string fileName)
