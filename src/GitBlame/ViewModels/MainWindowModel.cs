@@ -121,6 +121,8 @@ namespace GitBlame.ViewModels
 					{
 						// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
 						Log.ErrorFormat("CheckForUpdates failed: {0}", ex, ex.Message);
+						if (ex.InnerException != null)
+							Log.ErrorFormat("CheckForUpdates inner exception: {0}", ex.InnerException, ex.InnerException.Message);
 					}
 					catch (TimeoutException ex)
 					{
