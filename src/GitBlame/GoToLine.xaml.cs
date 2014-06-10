@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Windows;
 using GitBlame.Utility;
+using MahApps.Metro.Controls;
 
 namespace GitBlame
 {
-	public partial class GoToLine : Window
+	public partial class GoToLine : MetroWindow
 	{
 		public GoToLine()
 		{

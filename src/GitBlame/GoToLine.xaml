@@ -1,5 +1,6 @@
-﻿<Window x:Class="GitBlame.GoToLine"
+﻿<mah:MetroWindow x:Class="GitBlame.GoToLine"
 	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	Title="Go To Line" Height="140" Width="300">
 	
@@ -13,4 +14,4 @@
 			</StackPanel>
 		</StackPanel>
 	</Grid>
-</Window>
+</mah:MetroWindow>

@@ -8,6 +8,7 @@ using System.Windows.Input;
 using GitBlame.Models;
 using GitBlame.Utility;
 using GitBlame.ViewModels;
+using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using ReactiveUI;
 
@@ -16,7 +17,7 @@ namespace GitBlame
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window
+	public partial class MainWindow : MetroWindow
 	{
 		public MainWindow(MainWindowModel model)
 		{

@@ -4,37 +4,47 @@
     xmlns:model="clr-namespace:GitBlame.Models">
   <Application.Resources>
 
-    <Style TargetType="{x:Type ToolTip}">
-      <Setter Property="MaxWidth" Value="500" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="{x:Type ToolTip}">
-            <Border Name="Border" BorderThickness="2" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" BorderBrush="{x:Static Brushes.Black}" Background="#F8FFFFFF" Padding="4">
-              <ContentPresenter></ContentPresenter>
-            </Border>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colors.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Steel.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
+      </ResourceDictionary.MergedDictionaries>
 
-    <DataTemplate DataType="{x:Type model:Commit}">
-      <Grid>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="*"/>
-          <RowDefinition/>
-          <RowDefinition/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-          <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <TextBlock TextWrapping="Wrap" Text="{Binding Message, Mode=OneTime}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" />
-        <TextBlock Text="{Binding Author.Name, Mode=OneTime}" FontSize="11" Grid.Row="1" Grid.Column="0" />
-        <TextBlock Text="{Binding AuthorDate, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=OneTime}" FontSize="11" HorizontalAlignment="Right" Grid.Row="1" Grid.Column="1" />
-        <TextBlock Text="{Binding ShortId, Mode=OneTime}" FontSize="11" HorizontalAlignment="Right" Grid.Row="2" Grid.Column="1" />
-        <TextBlock Text="{Binding Author.Email, Mode=OneTime}" FontSize="11" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="1" />
-      </Grid>  
-    </DataTemplate>
+      <Style TargetType="{x:Type ToolTip}">
+        <Setter Property="MaxWidth" Value="500" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="{x:Type ToolTip}">
+              <Border Name="Border" BorderThickness="2" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" BorderBrush="{x:Static Brushes.Black}" Background="#F8FFFFFF" Padding="4">
+                <ContentPresenter></ContentPresenter>
+              </Border>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
+      <DataTemplate DataType="{x:Type model:Commit}">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition/>
+            <RowDefinition/>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <TextBlock TextWrapping="Wrap" Text="{Binding Message, Mode=OneTime}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" />
+          <TextBlock Text="{Binding Author.Name, Mode=OneTime}" FontSize="11" Grid.Row="1" Grid.Column="0" />
+          <TextBlock Text="{Binding AuthorDate, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=OneTime}" FontSize="11" HorizontalAlignment="Right" Grid.Row="1" Grid.Column="1" />
+          <TextBlock Text="{Binding ShortId, Mode=OneTime}" FontSize="11" HorizontalAlignment="Right" Grid.Row="2" Grid.Column="1" />
+          <TextBlock Text="{Binding Author.Email, Mode=OneTime}" FontSize="11" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="1" />
+        </Grid>
+      </DataTemplate>
+    </ResourceDictionary>
 
   </Application.Resources>
 </Application>
