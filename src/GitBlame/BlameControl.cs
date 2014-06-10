@@ -42,6 +42,8 @@ namespace GitBlame
 			m_commitAlpha = new Dictionary<string, byte>();
 			m_newLineBrush = new SolidColorBrush(Color.FromRgb(108, 226, 108));
 			m_newLineBrush.Freeze();
+			m_lineNumberBrush = new SolidColorBrush(Color.FromArgb(204, 100, 118, 135));
+			m_lineNumberBrush.Freeze();
 			m_changedTextBrush = new SolidColorBrush(Color.FromRgb(193, 228, 255));
 			m_changedTextBrush.Freeze();
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
@@ -300,7 +302,7 @@ namespace GitBlame
 			{
 				FormattedText lineNumberText = CreateFormattedText(line.LineNumber.ToString(CultureInfo.InvariantCulture), typeface);
 				lineNumberText.TextAlignment = TextAlignment.Right;
-				lineNumberText.SetForegroundBrush(Brushes.DarkCyan);
+				lineNumberText.SetForegroundBrush(m_lineNumberBrush);
 				lineNumberWidth = Math.Max(lineNumberWidth, lineNumberText.Width);
 				lineNumberText.MaxTextWidth = lineNumberWidth;
 				drawingContext.DrawText(lineNumberText, new Point(lineNumberColumn.Left, yOffset));
@@ -403,7 +405,7 @@ namespace GitBlame
 
 		private Color GetCommitColor(string commitId)
 		{
-			return Color.FromArgb(m_commitAlpha[commitId], 128, 128, 128);
+			return Color.FromArgb(m_commitAlpha[commitId], 100, 118, 135);
 		}
 
 		private void CreateBrushesForAuthors(int count)
@@ -516,6 +518,7 @@ namespace GitBlame
 		readonly MenuItem m_blamePreviousMenuItem;
 		readonly MenuItem m_viewAtGitHubMenuItem;
 		readonly Brush m_newLineBrush;
+		readonly SolidColorBrush m_lineNumberBrush;
 		readonly SolidColorBrush m_changedTextBrush;
 		readonly Dictionary<int, Brush> m_personBrush;
 		readonly Dictionary<string, SolidColorBrush> m_commitBrush;
