@@ -65,7 +65,7 @@
 	</Window.Resources>
 
     <DockPanel>
-		<Border DockPanel.Dock="Top" Visibility="{Binding Notification, Converter={x:Static cnv:Converters.NullableToVisibility}}" Height="32" Background="LightYellow" BorderBrush="DarkGray" BorderThickness="0 0 0 2" Padding="4">
+		<Border DockPanel.Dock="Top" Visibility="{Binding Notification, Converter={x:Static cnv:Converters.NullableToVisibility}}" Height="36" Background="LightYellow" BorderBrush="DarkGray" BorderThickness="0 0 0 2" Padding="4">
 			<ContentControl Content="{Binding Notification}"  />
 		</Border>
 		<ScrollViewer CanContentScroll="true" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
