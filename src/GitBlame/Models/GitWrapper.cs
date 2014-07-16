@@ -407,11 +407,8 @@ namespace GitBlame.Models
 					using (Repository repo = new Repository(gitDirectory))
 					{
 						var entry = repo.Index.FirstOrDefault(x => string.Equals(x.Path, probeFileName, StringComparison.OrdinalIgnoreCase));
-						if (entry != null)
-						{
-							fileName = entry.Path;
-							return true;
-						}
+						fileName = entry != null ? entry.Path : probeFileName;
+						return true;
 					}
 				}
 
