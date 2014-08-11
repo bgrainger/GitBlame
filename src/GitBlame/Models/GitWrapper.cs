@@ -291,27 +291,23 @@ namespace GitBlame.Models
 					// walk the text, breaking it into lines
 					foreach (char ch in diff.text)
 					{
-						if ((ch == '\r' || ch == '\n'))
+						if (ch == '\n')
 						{
-							// treat "\r\n" as one newline
-							if (!(lastChar == '\r' && ch == '\n'))
-							{
-								if (currentPart.Length != 0)
-									currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
+							if (currentPart.Length != 0)
+								currentParts.Add(new LinePart(currentPart.ToString(), diff.operation == Operation.EQUAL ? LinePartStatus.Existing : LinePartStatus.New));
 
-								// found another line
-								yield return new Line(lineNumber, firstOldLineNumber, currentParts.ToArray().AsReadOnly());
+							// found another line
+							yield return new Line(lineNumber, firstOldLineNumber, currentParts.ToArray().AsReadOnly());
 
-								// reset for next line
-								currentPart.Length = 0;
-								currentParts.Clear();
-								if (diff.operation == Operation.EQUAL)
-									lastOldLineNumber++;
-								lineNumber++;
-								firstOldLineNumber = lastOldLineNumber;
-							}
+							// reset for next line
+							currentPart.Length = 0;
+							currentParts.Clear();
+							if (diff.operation == Operation.EQUAL)
+								lastOldLineNumber++;
+							lineNumber++;
+							firstOldLineNumber = lastOldLineNumber;
 						}
-						else
+						else if (ch != '\r')
 						{
 							// add this character to the current part
 							currentPart.Append(ch);
