@@ -25,6 +25,8 @@ namespace GitBlame.Models
 			if (blameCommitId == null)
 			{
 				fileLines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(repositoryPath), fileName));
+				if (fileLines.Length > 0 && !string.IsNullOrEmpty(fileLines[0]) && fileLines[0][0] == '\uFEFF')
+					fileLines[0] = fileLines[0].Substring(1);
 			}
 			else
 			{
