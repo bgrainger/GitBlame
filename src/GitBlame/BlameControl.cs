@@ -27,13 +27,15 @@ namespace GitBlame
 			AddVisualChild(m_visual);
 
 			m_blamePreviousMenuItem = new MenuItem { Header = "Blame previous", Command = Commands.BlamePreviousCommand, CommandTarget = this };
-			m_viewAtGitHubMenuItem = new MenuItem { Header = "View at GitHub", Command = Commands.ViewAtGitHubCommand, CommandTarget = this };
+			m_viewCommitAtGitHubMenuItem = new MenuItem { Header = "View commit at GitHub", Command = Commands.ViewAtGitHubCommand, CommandTarget = this };
+			m_viewLineAtGitHubMenuItem = new MenuItem { Header = "View line at GitHub", Command = Commands.ViewAtGitHubCommand, CommandTarget = this };
 			ContextMenu = new ContextMenu
 			{
 				Items =
 				{
 					m_blamePreviousMenuItem,
-					m_viewAtGitHubMenuItem
+					m_viewCommitAtGitHubMenuItem,
+					m_viewLineAtGitHubMenuItem
 				}
 			};
 
@@ -206,13 +208,15 @@ namespace GitBlame
 
 				Commit commit = block.RawCommit;
 				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId == null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
-				m_viewAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
+				m_viewCommitAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
+				m_viewLineAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "blob/{0}/{1}#L{2}".FormatInvariant(commit.Id, block.RawBlock.FileName, line.LineNumber)) : null;
 				ContextMenu.IsOpen = true;
 			}
 			else
 			{
 				m_blamePreviousMenuItem.CommandParameter = null;
-				m_viewAtGitHubMenuItem.CommandParameter = null;
+				m_viewCommitAtGitHubMenuItem.CommandParameter = null;
+				m_viewLineAtGitHubMenuItem.CommandParameter = null;
 			}
 
 			e.Handled = true;
@@ -516,7 +520,8 @@ namespace GitBlame
 
 		readonly DrawingVisual m_visual;
 		readonly MenuItem m_blamePreviousMenuItem;
-		readonly MenuItem m_viewAtGitHubMenuItem;
+		readonly MenuItem m_viewCommitAtGitHubMenuItem;
+		readonly MenuItem m_viewLineAtGitHubMenuItem;
 		readonly Brush m_newLineBrush;
 		readonly SolidColorBrush m_lineNumberBrush;
 		readonly SolidColorBrush m_changedTextBrush;
