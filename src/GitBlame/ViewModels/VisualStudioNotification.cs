@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reactive.Linq;
 using ReactiveUI;
 
 namespace GitBlame.ViewModels
@@ -10,16 +9,16 @@ namespace GitBlame.ViewModels
 		public VisualStudioNotification(IEnumerable<VisualStudioIntegrationViewModel> versions)
 		{
 			m_observableVersions = new ReadOnlyObservableCollection<VisualStudioIntegrationViewModel>(new ObservableCollection<VisualStudioIntegrationViewModel>(versions));
-			m_integrateCommand = new ReactiveCommand(Observable.Return(true));
-			m_doNotIntegrateCommand = new ReactiveCommand(Observable.Return(true));
+			m_integrateCommand = ReactiveCommand.Create();
+			m_doNotIntegrateCommand = ReactiveCommand.Create();
 		}
 
-		public ReactiveCommand IntegrateCommand
+		public IReactiveCommand<object> IntegrateCommand
 		{
 			get { return m_integrateCommand; }
 		}
 
-		public ReactiveCommand DoNotIntegrateCommand
+		public IReactiveCommand<object> DoNotIntegrateCommand
 		{
 			get { return m_doNotIntegrateCommand; }
 		}
@@ -30,7 +29,7 @@ namespace GitBlame.ViewModels
 		}
 
 		readonly ReadOnlyObservableCollection<VisualStudioIntegrationViewModel> m_observableVersions;
-		readonly ReactiveCommand m_integrateCommand;
-		readonly ReactiveCommand m_doNotIntegrateCommand;
+		readonly IReactiveCommand<object> m_integrateCommand;
+		readonly IReactiveCommand<object> m_doNotIntegrateCommand;
 	}
 }
