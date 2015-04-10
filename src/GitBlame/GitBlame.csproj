@@ -277,16 +277,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\ext\libgit2sharp\Lib\NativeBinaries\x86\git2.dll">
-      <Link>git2.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\ext\libgit2sharp\Lib\NativeBinaries\x86\git2.pdb">
-      <Link>git2.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="App.ico" />
   </ItemGroup>
   <ItemGroup>

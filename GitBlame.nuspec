@@ -25,7 +25,6 @@
         <file src="src\GitBlame\bin\Release\DeltaCompressionDotNet.dll" target="lib\net45\DeltaCompressionDotNet.dll" />
         <file src="src\GitBlame\bin\Release\DeltaCompressionDotNet.MsDelta.dll" target="lib\net45\DeltaCompressionDotNet.MsDelta.dll" />
         <file src="src\GitBlame\bin\Release\DeltaCompressionDotNet.PatchApi.dll" target="lib\net45\DeltaCompressionDotNet.PatchApi.dll" />
-        <file src="src\GitBlame\bin\Release\git2.dll" target="lib\net45\git2.dll" />
         <file src="src\GitBlame\bin\Release\GitBlame.exe" target="lib\net45\GitBlame.exe" />
         <file src="src\GitBlame\bin\Release\GitBlame.exe.config" target="lib\net45\GitBlame.exe.config" />
         <file src="src\GitBlame\bin\Release\ICSharpCode.SharpZipLib.dll" target="lib\net45\ICSharpCode.SharpZipLib.dll" />
