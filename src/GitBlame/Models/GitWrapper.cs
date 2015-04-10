@@ -127,7 +127,7 @@ namespace GitBlame.Models
 							// diff_match_patch can generate incorrect output if there are more than 65536 lines being diffed
 							var checkLines = GetLineCount(oldFileContents) < 65000 && GetLineCount(newFileContents) < 65000;
 
-							var diff = new diff_match_patch();
+							var diff = new diff_match_patch { Diff_Timeout = 10 };
 							var diffs = diff.diff_main(oldFileContents, newFileContents, checkLines);
 							diff.diff_cleanupSemantic(diffs);
 
