@@ -121,10 +121,14 @@ namespace GitBlame.Models
 						Task.Factory.ContinueWhenAll(new[] { getOldFileContentTask, getNewFileContentTask }, tasks =>
 						{
 							// diff the two versions
-							string oldFileContents = tasks[0].Result;
-							string newFileContents = tasks[1].Result;
+							var oldFileContents = tasks[0].Result;
+							var newFileContents = tasks[1].Result;
+
+							// diff_match_patch can generate incorrect output if there are more than 65536 lines being diffed
+							var checkLines = GetLineCount(oldFileContents) < 65000 && GetLineCount(newFileContents) < 65000;
+
 							var diff = new diff_match_patch();
-							var diffs = diff.diff_main(oldFileContents, newFileContents);
+							var diffs = diff.diff_main(oldFileContents, newFileContents, checkLines);
 							diff.diff_cleanupSemantic(diffs);
 
 							// process all the lines in the diff output, matching them to blocks
@@ -391,6 +395,17 @@ namespace GitBlame.Models
 				return gitPath;
 
 			throw new ApplicationException("Can't find msysgit installed on the system.");
+		}
+
+		private static int GetLineCount(string text)
+		{
+			int lineCount = 0;
+			foreach (var ch in text)
+			{
+				if (ch == '\n')
+					lineCount++;
+			}
+			return lineCount;
 		}
 
 		public static bool SplitRepositoryPath(string filePath, out string gitDirectory, out string fileName)
