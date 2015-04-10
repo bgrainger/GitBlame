@@ -289,7 +289,7 @@ namespace GitBlame
 				{
 					Rect summaryPosition = block.SummaryPosition;
 					FormattedText commitText = CreateSmallFormattedText(block.Summary, typeface, summaryPosition.Width);
-					commitText.MaxLineCount = Math.Max(1, (int) (summaryPosition.Height / commitText.Height));
+					commitText.MaxLineCount = commitText.Height == 0 ? 1 : Math.Max(1, (int) (summaryPosition.Height / commitText.Height));
 					commitText.Trimming = TextTrimming.WordEllipsis;
 					drawingContext.DrawText(commitText, summaryPosition.TopLeft);
 				}
@@ -396,7 +396,7 @@ namespace GitBlame
 			SolidColorBrush brush;
 			if (!m_commitBrush.TryGetValue(block.CommitId, out brush))
 			{
-				m_commitAlpha.Add(block.CommitId, (byte) (block.Alpha * 255));
+				m_commitAlpha.Add(block.CommitId, unchecked((byte) (block.Alpha * 255)));
 				brush = new SolidColorBrush(GetCommitColor(block.CommitId));
 				m_commitBrush.Add(block.CommitId, brush);
 			}

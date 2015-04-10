@@ -43,7 +43,7 @@ namespace GitBlame.Models
 
 		public override int GetHashCode()
 		{
-			return m_name.GetHashCode() * 37 + m_email.GetHashCode();
+			return unchecked(m_name.GetHashCode() * 37 + m_email.GetHashCode());
 		}
 
 		public static bool operator ==(Person left, Person right)
