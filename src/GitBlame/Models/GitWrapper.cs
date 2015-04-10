@@ -415,6 +415,7 @@ namespace GitBlame.Models
 			while (currentDirectory != null);
 
 			Log.WarnFormat("Can't find .git directory for {0}", filePath);
+			gitDirectory = null;
 			fileName = null;
 			return false;
 		}
