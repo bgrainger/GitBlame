@@ -116,17 +116,17 @@ namespace GitBlame.ViewModels
 							}
 						}
 					}
-					catch (InvalidOperationException ex)
-					{
-						// Squirrel throws an InvalidOperationException (wrapping the underlying exception) if anything goes wrong
-						Log.ErrorFormat("CheckForUpdates failed: {0}", ex, ex.Message);
-						if (ex.InnerException != null)
-							Log.ErrorFormat("CheckForUpdates inner exception: {0}", ex.InnerException, ex.InnerException.Message);
-					}
 					catch (TimeoutException ex)
 					{
 						// Failed to check for updates; try again the next time the app is run
 						Log.ErrorFormat("CheckForUpdates timed out: {0}", ex, ex.Message);
+					}
+					catch (Exception ex)
+					{
+						// Squirrel throws a new Exception in many failure scenarios
+						Log.ErrorFormat("CheckForUpdates failed: {0}", ex, ex.Message);
+						if (ex.InnerException != null)
+							Log.ErrorFormat("CheckForUpdates inner exception: {0}", ex.InnerException, ex.InnerException.Message);
 					}
 				}
 				obs.OnCompleted();
