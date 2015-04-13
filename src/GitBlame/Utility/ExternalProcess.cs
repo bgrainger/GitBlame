@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Collections.Specialized;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -25,23 +23,13 @@ namespace GitBlame.Utility
 			m_defaultWorkingDirectory = defaultWorkingDirectory;
 		}
 
-		public ExternalProcessResults Run(string arguments)
-		{
-			return Run(new ProcessRunSettings(arguments));
-		}
-
 		public ExternalProcessResults Run(ProcessRunSettings settings)
 		{
 			StringBuilder errors = new StringBuilder();
-			using (Process process = StartProcess(settings, errors))
+			using (var process = StartProcess(settings, errors))
 			{
 				// wait for process to end (must read all output first)
-				string output = null;
-				if (settings.StandardOutputStream == null)
-					output = process.StandardOutput.ReadToEnd();
-				else
-					process.StandardOutput.BaseStream.CopyTo(settings.StandardOutputStream);
-
+				var output = process.StandardOutput.ReadToEnd();
 				process.WaitForExit();
 
 				// return errors and process output
@@ -49,9 +37,9 @@ namespace GitBlame.Utility
 			}
 		}
 
-		private Process StartProcess(ProcessRunSettings settings, StringBuilder errorsBuilder, params string[] env)
+		private Process StartProcess(ProcessRunSettings settings, StringBuilder errorsBuilder)
 		{
-			Process process = new Process
+			var process = new Process
 			{
 				StartInfo =
 				{
@@ -66,13 +54,6 @@ namespace GitBlame.Utility
 					CreateNoWindow = true,
 				},
 			};
-
-			if (settings.EnvironmentModifier != null)
-				settings.EnvironmentModifier(process.StartInfo.EnvironmentVariables);
-
-			// add additional environment variables
-			for (int n = 0; n < env.Length; n += 2)
-				process.StartInfo.EnvironmentVariables[env[n]] = env[n + 1];
 
 			process.ErrorDataReceived += (sender, e) => errorsBuilder.Append(e.Data);
 
@@ -104,10 +85,6 @@ namespace GitBlame.Utility
 		{
 			get { return m_arguments; }
 		}
-
-		public Action<StringDictionary> EnvironmentModifier { get; set; }
-
-		public Stream StandardOutputStream { get; set; }
 
 		readonly string m_arguments;
 	}
