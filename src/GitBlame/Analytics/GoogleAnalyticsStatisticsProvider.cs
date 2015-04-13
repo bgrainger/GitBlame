@@ -54,6 +54,8 @@ namespace GitBlame.Analytics
 					release = version.Build < 9200 ? "8 (Build {0})".FormatInvariant(version.Build) : "8";
 				else if (version.Major == 6 && version.Minor == 3)
 					release = version.Build < 9600 ? "8.1 (Build {0})".FormatInvariant(version.Build) : "8.1";
+				else if ((version.Major == 6 && version.Minor == 4) || (version.Major == 10 && version.Minor == 0))
+					release = "10 (Build {0})".FormatInvariant(version.Build);
 				else
 					release = version.ToString();
 
