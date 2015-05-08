@@ -222,37 +222,39 @@ namespace GitBlame.Models
 
 		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string repositoryPath, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
 		{
-			// start a task to get the content of this file from each commit in its history
-			var getFileContentTasks = blocks
-				.SelectMany(b => new[]
+			Dictionary<string, Task<string>> getFileContentTasks;
+			using (var repo = new Repository(repositoryPath))
+			{
+				getFileContentTasks = blocks
+					.SelectMany(b => new[]
 					{
 						new { CommitId = b.Commit.Id, b.FileName },
 						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
 					})
-				.Distinct()
-				.Where(c => c.CommitId != null && c.CommitId != UncommittedChangesCommitId)
-				.ToDictionary(
-					c => c.CommitId,
-					c => Task.Run(() =>
-					{
-						using (var repo = new Repository(repositoryPath))
-						{
-							// look up commit in repo
-							var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(c.CommitId);
-
-							// save the commit message
-							Commit commit;
-							if (commits.TryGetValue(c.CommitId, out commit))
-								commit.SetMessage(gitCommit.Message);
-
-							return GetFileContent(gitCommit, c.FileName);
-						}
-					}));
+					.Distinct()
+					.Where(c => c.CommitId != null && c.CommitId != UncommittedChangesCommitId)
+					.ToDictionary(
+						c => c.CommitId,
+						c => Task.FromResult(GetFileContent(repo, commits, c.CommitId, c.FileName)));
+			}
 
 			// add a task that returns the current version of the file
 			getFileContentTasks.Add(UncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
 
 			return getFileContentTasks;
+		}
+
+		private static string GetFileContent(Repository repo, Dictionary<string, Commit> commits, string commitId, string fileName)
+		{
+			// look up commit in repo
+			var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
+
+			// save the commit message
+			Commit commit;
+			if (commits.TryGetValue(commitId, out commit))
+				commit.SetMessage(gitCommit.Message);
+
+			return GetFileContent(gitCommit, fileName);
 		}
 
 		private static string GetFileContent(string repositoryPath, string commitId, string fileName)
