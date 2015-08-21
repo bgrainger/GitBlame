@@ -387,6 +387,7 @@ namespace GitBlame.Models
 		{
 			string[] gitPaths =
 			{
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Git\bin\git.exe"),
 				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Git\bin\git.exe"),
 				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Git\bin\git.exe"),
 				@"D:\Program Files (x86)\Git\bin\git.exe",
