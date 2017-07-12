@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reactive.Linq;
 using Common.Logging;
 using ReactiveUI;
-using Squirrel;
 
 namespace GitBlame.ViewModels
 {
@@ -21,13 +18,10 @@ namespace GitBlame.ViewModels
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value)
 				.Select(x => x == null ? new OpenFileNotification() : x.RepoPath == null ? new OpenFileNotification(x.FilePath) : null);
 			var notifications = openFileNotifications.Cast<NotificationBase>().StartWith(default(NotificationBase)).CombineLatest(
-					CheckForUpdates().Cast<NotificationBase>().StartWith(default(NotificationBase)),
 					VisualStudioIntegration.Check().Cast<NotificationBase>().StartWith(default(NotificationBase)),
-					(of, ua, vs) => of ?? ua ?? vs)
+					(of, vs) => of ?? vs)
 				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
-
-			CheckForUpdates();
 		}
 
 		public BlamePositionModel Position
@@ -82,60 +76,6 @@ namespace GitBlame.ViewModels
 		public string WindowTitle
 		{
 			get { return m_windowTitle.Value; }
-		}
-
-		private IObservable<UpdateAvailableNotification> CheckForUpdates()
-		{
-			return Observable.Create<UpdateAvailableNotification>(async obs =>
-			{
-				string updateUrl = AppModel.GetRegistrySetting("UpdateUrl");
-				Log.DebugFormat("UpdateUrl = {0}", updateUrl);
-				using (var updateManager = new UpdateManager(updateUrl ?? @"http://bradleygrainger.com/GitBlame/download", "GitBlame", FrameworkVersion.Net45))
-				{
-					try
-					{
-						UpdateInfo updateInfo = await updateManager.CheckForUpdate();
-						var releases = updateInfo == null ? new List<ReleaseEntry>() : updateInfo.ReleasesToApply.ToList();
-						if (updateInfo == null)
-							Log.Info("CheckForUpdate returned (null)");
-						else
-							Log.InfoFormat("CheckForUpdate: Current=({0}), Future=({1}), {2} ReleasesToApply", ToLog(updateInfo.CurrentlyInstalledVersion), ToLog(updateInfo.FutureReleaseEntry), releases.Count);
-
-						if (releases.Count != 0)
-						{
-							await updateManager.DownloadReleases(releases);
-							Log.Info("Downloaded releases");
-							var newDirectory = await updateManager.ApplyReleases(updateInfo);
-							Log.InfoFormat("ApplyReleases: {0}", newDirectory);
-
-							if (!string.IsNullOrEmpty(newDirectory))
-							{
-								var newPath = Path.Combine(newDirectory, "GitBlame.exe");
-								VisualStudioIntegration.ReintegrateWithVisualStudio(newPath);
-								obs.OnNext(new UpdateAvailableNotification(newPath));
-							}
-						}
-					}
-					catch (TimeoutException ex)
-					{
-						// Failed to check for updates; try again the next time the app is run
-						Log.ErrorFormat("CheckForUpdates timed out: {0}", ex, ex.Message);
-					}
-					catch (Exception ex)
-					{
-						// Squirrel throws a new Exception in many failure scenarios
-						Log.ErrorFormat("CheckForUpdates failed: {0}", ex, ex.Message);
-						if (ex.InnerException != null)
-							Log.ErrorFormat("CheckForUpdates inner exception: {0}", ex.InnerException, ex.InnerException.Message);
-					}
-				}
-				obs.OnCompleted();
-			});
-		}
-
-		private static string ToLog(ReleaseEntry entry)
-		{
-			return entry == null ? "null" : entry.EntryAsString;
 		}
 
 		static readonly ILog Log = LogManager.GetLogger("MainWindow");

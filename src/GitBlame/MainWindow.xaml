@@ -35,13 +35,6 @@
 				</StackPanel>
 			</DataTemplate>
 
-			<DataTemplate DataType="{x:Type vm:UpdateAvailableNotification}">
-				<StackPanel Orientation="Horizontal">
-					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">An update is available. Restart GitBlame to install it.</TextBlock>
-					<Button Command="{x:Static src:Commands.ApplyUpdateCommand}" CommandParameter="{Binding CommandParameter}">Restart</Button>
-				</StackPanel>
-			</DataTemplate>
-
 			<DataTemplate DataType="{x:Type vm:VisualStudioNotification}">
 				<StackPanel Orientation="Horizontal">
 					<TextBlock Height="16" VerticalAlignment="Center" Padding="0 0 8 0">Add as “External Tool”?</TextBlock>
