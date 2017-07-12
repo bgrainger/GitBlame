@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime;
 using System.Windows;
-using Bugsense.WPF;
 using Common.Logging;
 using GitBlame.Analytics;
 using GitBlame.ViewModels;
@@ -28,9 +27,6 @@ namespace GitBlame
 			Log.DebugFormat("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
 
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
-#if !DEVELOPMENT
-			BugSense.Init("w8cfcffb");
-#endif
 
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{
