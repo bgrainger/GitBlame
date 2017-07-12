@@ -77,6 +77,32 @@ namespace GitBlame.Models
 
 			Task.Run(() =>
 			{
+#if LIBGIT2SHARP
+				List<Block> blocks2 = new List<Block>();
+				Dictionary<string, Commit> commits2 = new Dictionary<string, Commit>();
+
+				using (var repo = new Repository(repositoryPath))
+				{
+					var blameHunks = repo.Blame(fileName, new BlameOptions { StartingAt = blameCommitId });
+					foreach (var blameHunk in blameHunks)
+					{
+						var gitCommit = blameHunk.FinalCommit;
+						Commit commit;
+						if (!commits2.TryGetValue(gitCommit.Sha, out commit))
+						{
+							var gitParents = gitCommit.Parents.ToList();
+							commit = new Commit(gitCommit.Sha, new Person(gitCommit.Author.Name, gitCommit.Author.Email), gitCommit.Author.When,
+								new Person(gitCommit.Committer.Name, gitCommit.Committer.Email), gitCommit.Committer.When, gitCommit.MessageShort,
+								gitParents.Count == 0 ? null : gitParents[0].Sha, gitParents.Count == 0 ? null : blameHunk.InitialPath);
+							commits2.Add(gitCommit.Sha, commit);
+						}
+						var block = new Block(blameHunk.FinalStartLineNumber + 1, blameHunk.LineCount, commit, blameHunk.InitialPath, blameHunk.InitialStartLineNumber + 1);
+						blocks2.Add(block);
+					}
+				}
+				string ToString(Block block) => $"{block.Commit.Id} {block.FileName} {block.Commit.Author.Email} {block.Commit.Committer.Email} {block.StartLine} {block.OriginalStartLine} {block.Commit.PreviousCommitId} {block.Commit.PreviousFileName}";
+#endif
+
 				// run "git blame"
 				ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
 				List<string> arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
