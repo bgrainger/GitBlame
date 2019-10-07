@@ -42,27 +42,12 @@
 
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
-    <PackageReference Include="Common.Logging.Core" Version="3.4.1" />
     <PackageReference Include="Common.Logging.NLog32" Version="3.4.1" />
-    <PackageReference Include="ControlzEx" Version="3.0.2.4" />
     <PackageReference Include="LibGit2Sharp" Version="0.26.1" />
     <PackageReference Include="LibGit2Sharp.NativeBinaries" Version="2.0.289" />
     <PackageReference Include="MahApps.Metro" Version="1.6.5" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="NLog" Version="3.2.0.0" />
     <PackageReference Include="reactiveui" Version="6.4.0.1" />
-    <PackageReference Include="reactiveui-blend" Version="6.4.0.1" />
-    <PackageReference Include="reactiveui-core" Version="6.4.0.1" />
-    <PackageReference Include="reactiveui-platforms" Version="6.4.0.1" />
-    <PackageReference Include="Rx-Core" Version="2.2.5" />
-    <PackageReference Include="Rx-Interfaces" Version="2.2.5" />
-    <PackageReference Include="Rx-Linq" Version="2.2.5" />
-    <PackageReference Include="Rx-Main" Version="2.2.5" />
-    <PackageReference Include="Rx-PlatformServices" Version="2.2.5" />
-    <PackageReference Include="Rx-WPF" Version="2.2.5" />
-    <PackageReference Include="Rx-Xaml" Version="2.2.5" />
-    <PackageReference Include="Splat" Version="1.6.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
