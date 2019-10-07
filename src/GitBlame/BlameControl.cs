@@ -381,12 +381,12 @@ namespace GitBlame
 
 		private FormattedText CreateFormattedText(string text, Typeface typeface)
 		{
-			return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize, Brushes.Black);
+			return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize, Brushes.Black, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 		}
 
 		private FormattedText CreateSmallFormattedText(string text, Typeface typeface, double maxWidth)
 		{
-			FormattedText formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize * 0.75, Brushes.Black)
+			FormattedText formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, m_emSize * 0.75, Brushes.Black, VisualTreeHelper.GetDpi(this).PixelsPerDip)
 			{
 				MaxTextWidth = maxWidth,
 				Trimming = TextTrimming.CharacterEllipsis,
