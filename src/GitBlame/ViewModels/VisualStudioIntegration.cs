@@ -47,9 +47,9 @@ namespace GitBlame.ViewModels
 				if (possibleIntegrations.Any(x => x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
 				{
 					Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
-					var visualStudioNotification = new VisualStudioNotification(possibleIntegrations);
-					visualStudioNotification.IntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(obs, exePath, visualStudioNotification, true));
-					visualStudioNotification.DoNotIntegrateCommand.Subscribe(x => IntegrateWithVisualStudio(obs, null, visualStudioNotification, false));
+					var visualStudioNotification = new VisualStudioNotification(possibleIntegrations,
+						x => IntegrateWithVisualStudio(obs, exePath, x, true),
+						x => IntegrateWithVisualStudio(obs, null, x, false));
 					obs.OnNext(visualStudioNotification);
 				}
 				else

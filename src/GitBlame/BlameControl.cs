@@ -51,20 +51,24 @@ namespace GitBlame
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
 
 			// can only show the tooltip if the mouse is over the control, and the context menu isn't open
-			var canShowTooltip = this.WhenAny(x => x.IsMouseOver, x => x.ContextMenu.IsOpen, (mo, cm) => mo.Value && !cm.Value);
-			canShowTooltip.Where(x => !x).ObserveOnDispatcher().Subscribe(_ => HideToolTip());
+			var mouseOver = Observable.FromEventPattern(this, nameof(MouseMove)).Select(x => IsMouseOver).DistinctUntilChanged();
+			var contextMenuOpening = Observable.FromEventPattern(ContextMenu, nameof(ContextMenuOpening)).Select(x => true);
+			var contextMenuClosing = Observable.FromEventPattern(ContextMenu, nameof(ContextMenuOpening)).Select(x => false).StartWith(false);
+			var contextMenu = Observable.Merge(contextMenuOpening, contextMenuClosing);
+			var canShowTooltip = mouseOver.CombineLatest(contextMenu, (mo, cm) => mo && !cm);
+			canShowTooltip.Where(x => !x).Subscribe(_ => HideToolTip());
 
 			var mouseMove = Observable.FromEventPattern<MouseEventArgs>(this, "MouseMove");
 			var mouseOverCommits = mouseMove
 				.Select(x => x.EventArgs.GetPosition(this))
 				.Select(GetCommitFromPoint)
 				.DistinctUntilChanged();
-			mouseOverCommits.ObserveOnDispatcher().Subscribe(MouseOverCommit);
+			mouseOverCommits.Subscribe(MouseOverCommit);
 			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5))
 				.CombineLatest(canShowTooltip, (l, r) => new { Commit = l, CanShowTooltip = r })
 				.Where(x => x.Commit != null && x.CanShowTooltip)
 				.Select(x => x.Commit)
-				.ObserveOnDispatcher()
+				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe(ShowCommitTooltip);
 		}
 
@@ -96,7 +100,7 @@ namespace GitBlame
 			m_blame = blame;
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
-			m_blameSubscription = Observable.FromEventPattern<PropertyChangedEventArgs>(m_blame, "PropertyChanged").ObserveOnDispatcher().Subscribe(x => OnBlameResultPropertyChanged(x.EventArgs));
+			m_blameSubscription = Observable.FromEventPattern<PropertyChangedEventArgs>(m_blame, "PropertyChanged").ObserveOn(RxApp.MainThreadScheduler).Subscribe(x => OnBlameResultPropertyChanged(x.EventArgs));
 
 			m_hoverCommitId = null;
 			m_selectedCommitId = null;

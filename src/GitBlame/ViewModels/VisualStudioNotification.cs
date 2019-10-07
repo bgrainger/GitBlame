@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using ReactiveUI;
 
@@ -6,30 +7,17 @@ namespace GitBlame.ViewModels
 {
 	public sealed class VisualStudioNotification : NotificationBase
 	{
-		public VisualStudioNotification(IEnumerable<VisualStudioIntegrationViewModel> versions)
+		public VisualStudioNotification(IEnumerable<VisualStudioIntegrationViewModel> versions, Action<VisualStudioNotification> integrate, Action<VisualStudioNotification> doNotIntegrate)
 		{
-			m_observableVersions = new ReadOnlyObservableCollection<VisualStudioIntegrationViewModel>(new ObservableCollection<VisualStudioIntegrationViewModel>(versions));
-			m_integrateCommand = ReactiveCommand.Create();
-			m_doNotIntegrateCommand = ReactiveCommand.Create();
+			Versions = new ReadOnlyObservableCollection<VisualStudioIntegrationViewModel>(new ObservableCollection<VisualStudioIntegrationViewModel>(versions));
+			IntegrateCommand = ReactiveCommand.Create(() => integrate(this));
+			DoNotIntegrateCommand = ReactiveCommand.Create(() => doNotIntegrate(this));
 		}
 
-		public IReactiveCommand<object> IntegrateCommand
-		{
-			get { return m_integrateCommand; }
-		}
+		public IReactiveCommand IntegrateCommand { get; }
 
-		public IReactiveCommand<object> DoNotIntegrateCommand
-		{
-			get { return m_doNotIntegrateCommand; }
-		}
+		public IReactiveCommand DoNotIntegrateCommand { get; }
 
-		public ReadOnlyObservableCollection<VisualStudioIntegrationViewModel> Versions
-		{
-			get { return m_observableVersions; }
-		}
-
-		readonly ReadOnlyObservableCollection<VisualStudioIntegrationViewModel> m_observableVersions;
-		readonly IReactiveCommand<object> m_integrateCommand;
-		readonly IReactiveCommand<object> m_doNotIntegrateCommand;
+		public ReadOnlyObservableCollection<VisualStudioIntegrationViewModel> Versions { get; }
 	}
 }

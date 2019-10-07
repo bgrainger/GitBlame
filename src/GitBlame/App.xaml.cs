@@ -8,7 +8,9 @@ using System.Runtime;
 using System.Windows;
 using Common.Logging;
 using GitBlame.Analytics;
+using GitBlame.Utility;
 using GitBlame.ViewModels;
+using ReactiveUI;
 
 namespace GitBlame
 {
@@ -19,6 +21,9 @@ namespace GitBlame
 	{
 		public App()
 		{
+			// this doesn't appear to be configured automatically for WPF in .NET Core 3.0
+			RxApp.MainThreadScheduler = new DispatcherScheduler();
+
 			string profilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"GitBlame\Profile");
 			Directory.CreateDirectory(profilePath);
 			ProfileOptimization.SetProfileRoot(profilePath);

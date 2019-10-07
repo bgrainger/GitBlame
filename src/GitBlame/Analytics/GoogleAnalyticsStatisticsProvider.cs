@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Windows.Forms;
+using System.Windows;
 using GitBlame.Utility;
 using Microsoft.Win32;
 
@@ -14,18 +14,11 @@ namespace GitBlame.Analytics
 	{
 		public GoogleAnalyticsStatisticsProvider()
 		{
-			m_screen = Screen.PrimaryScreen;
 		}
 
-		public int ScreenWidth
-		{
-			get { return m_screen.Bounds.Width; }
-		}
+		public int ScreenWidth => (int) SystemParameters.PrimaryScreenWidth;
 
-		public int ScreenHeight
-		{
-			get { return m_screen.Bounds.Height; }
-		}
+		public int ScreenHeight => (int) SystemParameters.PrimaryScreenHeight;
 
 		public int ScreenColorDepth
 		{
@@ -159,7 +152,5 @@ namespace GitBlame.Analytics
 		[DllImport("Kernel32.dll", ExactSpelling = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool IsWow64Process(IntPtr hProcess, [MarshalAs(UnmanagedType.Bool)] out bool bWow64Process);
-
-		readonly Screen m_screen;
 	}
 }
