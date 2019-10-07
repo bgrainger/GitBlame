@@ -7,10 +7,12 @@ ipch/
 Releases/
 
 # ignore user-specific options/cache files
+.vs/
 _ReSharper.*
 Thumbs.db
 *.csproj.user
 *.DotSettings.user
+*.ncrunchsolution.user
 *.[Rr]e[Ss]harper.user
 *.sln.cache
 *.suo
