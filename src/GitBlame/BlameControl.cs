@@ -51,10 +51,8 @@ namespace GitBlame
 			m_redrawTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, OnRedrawTimerTick, Dispatcher);
 
 			// can only show the tooltip if the mouse is over the control, and the context menu isn't open
-			var mouseOver = Observable.FromEventPattern(this, nameof(MouseMove)).Select(x => IsMouseOver).DistinctUntilChanged();
-			var contextMenuOpening = Observable.FromEventPattern(ContextMenu, nameof(ContextMenuOpening)).Select(x => true);
-			var contextMenuClosing = Observable.FromEventPattern(ContextMenu, nameof(ContextMenuOpening)).Select(x => false).StartWith(false);
-			var contextMenu = Observable.Merge(contextMenuOpening, contextMenuClosing);
+			var mouseOver = DependencyPropertyUtility.ToObservable<bool>(this, IsMouseOverProperty);
+			var contextMenu = DependencyPropertyUtility.ToObservableWithInitialValue<bool>(ContextMenu, ContextMenu.IsOpenProperty);
 			var canShowTooltip = mouseOver.CombineLatest(contextMenu, (mo, cm) => mo && !cm);
 			canShowTooltip.Where(x => !x).Subscribe(_ => HideToolTip());
 
@@ -173,21 +171,15 @@ namespace GitBlame
 
 		private void ShowCommitTooltip(Commit commit)
 		{
-			m_hoverTip = new ToolTip
-			{
-				Content = commit,
-				Placement = PlacementMode.Mouse,
-				IsOpen = true
-			};
+			m_hoverTip ??= new ToolTip { Placement = PlacementMode.Mouse };
+			m_hoverTip.Content = commit;
+			m_hoverTip.IsOpen = true;
 		}
 
 		private void HideToolTip()
 		{
-			if (m_hoverTip != null)
-			{
+			if (m_hoverTip is object)
 				m_hoverTip.IsOpen = false;
-				m_hoverTip = null;
-			}
 		}
 
 		protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
