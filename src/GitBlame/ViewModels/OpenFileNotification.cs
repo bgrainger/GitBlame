@@ -6,16 +6,8 @@
 		{
 		}
 
-		public OpenFileNotification(string filePath)
-		{
-			m_filePath = filePath;
-		}
+		public OpenFileNotification(string filePath) => FilePath = filePath;
 
-		public string FilePath
-		{
-			get { return m_filePath; }
-		}
-
-		readonly string m_filePath;
+		public string FilePath { get; }
 	}
 }

@@ -28,9 +28,8 @@ namespace GitBlame.ViewModels
 				// remember versions the user has already declined to integrate with
 				foreach (var model in possibleIntegrations)
 				{
-					VisualStudioIntegrationStatus currentStatus;
 					if (model.IntegrationStatus == VisualStudioIntegrationStatus.Available &&
-						currentIntegrationStatus.TryGetValue(model.Version, out currentStatus) &&
+						currentIntegrationStatus.TryGetValue(model.Version, out var currentStatus) &&
 						currentStatus == VisualStudioIntegrationStatus.NotInstalled)
 					{
 						model.IntegrationStatus = VisualStudioIntegrationStatus.NotInstalled;
@@ -93,22 +92,20 @@ namespace GitBlame.ViewModels
 				string version = model.Version;
 				try
 				{
-					using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\VisualStudio\{0}.0\External Tools".FormatInvariant(version)))
+					using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\VisualStudio\{0}.0\External Tools".FormatInvariant(version));
+					if (key is object)
 					{
-						if (key != null)
-						{
-							int toolCount = (int) key.GetValue("ToolNumKeys");
-							int tool = model.ToolIndex ?? toolCount;
-							Log.InfoFormat("Creating External Tool #{0} for Visual Studio {1}", tool, version);
-							key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
-							key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
-							key.SetValue("ToolDir{0}".FormatInvariant(tool), "$(ItemDir)");
-							key.SetValue("ToolOpt{0}".FormatInvariant(tool), 17);
-							key.SetValue("ToolSourceKey{0}".FormatInvariant(tool), "");
-							key.SetValue("ToolTitle{0}".FormatInvariant(tool), "Git&Blame");
-							if (tool >= toolCount)
-								key.SetValue("ToolNumKeys", tool + 1);
-						}
+						int toolCount = (int) key.GetValue("ToolNumKeys");
+						int tool = model.ToolIndex ?? toolCount;
+						Log.InfoFormat("Creating External Tool #{0} for Visual Studio {1}", tool, version);
+						key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
+						key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
+						key.SetValue("ToolDir{0}".FormatInvariant(tool), "$(ItemDir)");
+						key.SetValue("ToolOpt{0}".FormatInvariant(tool), 17);
+						key.SetValue("ToolSourceKey{0}".FormatInvariant(tool), "");
+						key.SetValue("ToolTitle{0}".FormatInvariant(tool), "Git&Blame");
+						if (tool >= toolCount)
+							key.SetValue("ToolNumKeys", tool + 1);
 					}
 				}
 				catch (SecurityException ex)
@@ -136,33 +133,29 @@ namespace GitBlame.ViewModels
 			var possibleIntegrationStatus = new List<VisualStudioIntegrationViewModel>();
 			try
 			{
-				using (var visualStudio = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\VisualStudio"))
+				using var visualStudio = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\VisualStudio");
+				if (visualStudio is object)
 				{
-					if (visualStudio != null)
+					foreach (string subKeyName in s_knownVisualStudioVersions)
 					{
-						foreach (string subKeyName in s_knownVisualStudioVersions)
+						using var externalTools = visualStudio.OpenSubKey(subKeyName + @".0\External Tools");
+						if (externalTools is object)
 						{
-							using (var externalTools = visualStudio.OpenSubKey(subKeyName + @".0\External Tools"))
+							VisualStudioIntegrationViewModel model = new VisualStudioIntegrationViewModel
 							{
-								if (externalTools != null)
+								Version = subKeyName,
+								IntegrationStatus = VisualStudioIntegrationStatus.Available
+							};
+							for (int tool = 0; tool < (int) externalTools.GetValue("ToolNumKeys"); tool++)
+							{
+								if (commandPath.Equals(externalTools.GetValue("ToolCmd" + tool)))
 								{
-									VisualStudioIntegrationViewModel model = new VisualStudioIntegrationViewModel
-									{
-										Version = subKeyName,
-										IntegrationStatus = VisualStudioIntegrationStatus.Available
-									};
-									for (int tool = 0; tool < (int) externalTools.GetValue("ToolNumKeys"); tool++)
-									{
-										if (commandPath.Equals(externalTools.GetValue("ToolCmd" + tool)))
-										{
-											model.IntegrationStatus = VisualStudioIntegrationStatus.Installed;
-											model.ToolIndex = tool;
-										}
-									}
-
-									possibleIntegrationStatus.Add(model);
+									model.IntegrationStatus = VisualStudioIntegrationStatus.Installed;
+									model.ToolIndex = tool;
 								}
 							}
+
+							possibleIntegrationStatus.Add(model);
 						}
 					}
 				}

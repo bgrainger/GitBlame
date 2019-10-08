@@ -15,8 +15,8 @@ namespace GitBlame.ViewModels
 
 		public MainWindowModel MainWindow
 		{
-			get { return m_mainWindowModel; }
-			private set { this.RaiseAndSetIfChanged(ref m_mainWindowModel, value); }
+			get => m_mainWindowModel;
+			private set => this.RaiseAndSetIfChanged(ref m_mainWindowModel, value);
 		}
 
 		public static string GetRegistrySetting(string name)
@@ -24,11 +24,8 @@ namespace GitBlame.ViewModels
 			try
 			{
 				Log.InfoFormat("Getting registry value for '{0}'", name);
-				using (var key = Registry.CurrentUser.OpenSubKey(c_registryKeyName))
-				{
-					if (key != null)
-						return key.GetValue(name) as string;
-				}
+				using var key = Registry.CurrentUser.OpenSubKey(c_registryKeyName);
+				return key?.GetValue(name) as string;
 			}
 			catch (SecurityException ex)
 			{
@@ -47,14 +44,9 @@ namespace GitBlame.ViewModels
 			try
 			{
 				Log.InfoFormat("Setting registry value '{0}' to '{1}'", name, value);
-				using (var key = Registry.CurrentUser.CreateSubKey(c_registryKeyName))
-				{
-					if (key != null)
-					{
-						key.SetValue(name, value);
-						return true;
-					}
-				}
+				using var key = Registry.CurrentUser.CreateSubKey(c_registryKeyName);
+				key?.SetValue(name, value);
+				return true;
 			}
 			catch (SecurityException ex)
 			{

@@ -7,6 +7,7 @@
     <ApplicationIcon>App.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,12 +16,16 @@
     <PackageReference Include="LibGit2Sharp" Version="0.26.1" />
     <PackageReference Include="LibGit2Sharp.NativeBinaries" Version="2.0.289" />
     <PackageReference Include="MahApps.Metro" Version="2.0.0-alpha0490" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="NLog" Version="3.2.0.0" />
     <PackageReference Include="reactiveui" Version="10.3.6" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs"/>
+    <Compile Include="..\..\ext\DiffMatchPatch\DiffMatchPatch.cs" />
     <Resource Include="App.ico" />
   </ItemGroup>
 

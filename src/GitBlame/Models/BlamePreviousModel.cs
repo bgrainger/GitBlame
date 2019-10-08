@@ -6,31 +6,13 @@ namespace GitBlame.Models
 	{
 		public BlamePreviousModel(string commitId, string fileName, int lineNumber)
 		{
-			if (commitId == null)
-				throw new ArgumentNullException("commitId");
-
-			m_lineNumber = lineNumber;
-			m_commitId = commitId;
-			m_fileName = fileName;
+			CommitId = commitId ?? throw new ArgumentNullException(nameof(commitId));
+			FileName = fileName;
+			LineNumber = lineNumber;
 		}
 
-		public string CommitId
-		{
-			get { return m_commitId; }
-		}
-
-		public string FileName
-		{
-			get { return m_fileName; }
-		}
-
-		public int LineNumber
-		{
-			get { return m_lineNumber; }
-		}
-
-		readonly int m_lineNumber;
-		readonly string m_commitId;
-		readonly string m_fileName;
+		public string CommitId { get; }
+		public string FileName { get; }
+		public int LineNumber { get; }
 	}
 }

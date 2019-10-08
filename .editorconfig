@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
+end_of_line = lf
+
+[*.csproj]
+insert_final_newline = false
+
+[*.cs]
+indent_style = tab
+indent_size = 4
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1303.severity = none
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1724.severity = none
+dotnet_diagnostic.CA1822.severity = none

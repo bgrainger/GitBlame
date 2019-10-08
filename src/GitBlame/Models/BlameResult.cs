@@ -12,41 +12,25 @@ namespace GitBlame.Models
 	/// </summary>
 	internal sealed class BlameResult : INotifyPropertyChanged
 	{
-		public BlameResult(Uri webRootUrl, ReadOnlyCollection<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
+		public BlameResult(Uri webRootUrl, IReadOnlyList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
 		{
-			m_webRootUrl = webRootUrl;
-			m_blocks = blocks;
+			WebRootUrl = webRootUrl;
+			Blocks = blocks;
 			m_lines = lines;
 			m_linesReadOnly = m_lines.AsReadOnly();
 			m_commits = commits;
 			m_commitsReadOnly = m_commits.Values.ToList().AsReadOnly();
 		}
 
-		public Uri WebRootUrl
-		{
-			get { return m_webRootUrl; }
-		}
-
-		public ReadOnlyCollection<Block> Blocks
-		{
-			get { return m_blocks; }
-		}
-
-		public ReadOnlyCollection<Commit> Commits
-		{
-			get { return m_commitsReadOnly; }
-		}
-
-		public ReadOnlyCollection<Line> Lines
-		{
-			get { return m_linesReadOnly; }
-		}
-
+		public Uri WebRootUrl { get; }
+		public IReadOnlyList<Block> Blocks { get; private set; }
+		public IReadOnlyList<Commit> Commits => m_commitsReadOnly;
+		public IReadOnlyList<Line> Lines => m_linesReadOnly;
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		internal void SetData(IList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
 		{
-			m_blocks = blocks.AsReadOnly();
+			Blocks = blocks.AsReadOnly();
 			m_lines = lines;
 			m_linesReadOnly = lines.AsReadOnly();
 			m_commits = commits;
@@ -63,21 +47,15 @@ namespace GitBlame.Models
 
 			m_lines[lineNumber - 1] = line;
 
-			RaisePropertyChanged("Lines");
+			RaisePropertyChanged(nameof(Lines));
 		}
 
-		private void RaisePropertyChanged(string propertyName)
-		{
-			PropertyChangedEventHandler handler = PropertyChanged;
-			if (handler != null)
-				handler(this, new PropertyChangedEventArgs(propertyName));
-		}
+		private void RaisePropertyChanged(string propertyName) =>
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-		readonly Uri m_webRootUrl;
-		ReadOnlyCollection<Block> m_blocks;
 		IList<Line> m_lines;
-		ReadOnlyCollection<Line> m_linesReadOnly;
+		IReadOnlyList<Line> m_linesReadOnly;
 		Dictionary<string, Commit> m_commits;
-		ReadOnlyCollection<Commit> m_commitsReadOnly;
+		IReadOnlyList<Commit> m_commitsReadOnly;
 	}
 }

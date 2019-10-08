@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace GitBlame.Utility
@@ -15,9 +14,6 @@ namespace GitBlame.Utility
 		/// <typeparam name="T">The type of item in the list.</typeparam>
 		/// <param name="list">The list.</param>
 		/// <returns>A <see cref="ReadOnlyCollection{T}"/> that wraps the list.</returns>
-		public static ReadOnlyCollection<T> AsReadOnly<T>(this IList<T> list)
-		{
-			return new ReadOnlyCollection<T>(list);
-		}
+		public static ReadOnlyCollection<T> AsReadOnly<T>(this IList<T> list) => new ReadOnlyCollection<T>(list);
 	}
 }

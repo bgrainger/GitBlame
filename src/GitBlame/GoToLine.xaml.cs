@@ -29,8 +29,7 @@ namespace GitBlame
 		{
 			BlameControl blame = (BlameControl)DataContext;
 			
-			int lineNumber;	
-			if (int.TryParse(LineNumber.Text, out lineNumber) && 
+			if (int.TryParse(LineNumber.Text, out var lineNumber) && 
 				lineNumber > 0 && 
 				lineNumber <= blame.TotalLines)
 			{

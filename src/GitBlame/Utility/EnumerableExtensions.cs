@@ -22,18 +22,13 @@ namespace GitBlame.Utility
 		/// <returns>A sequence of IGroupings containing a sequence of objects and a key.</returns>
 		public static IEnumerable<IGrouping<TKey, TSource>> GroupConsecutiveBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
 		{
-			if (source == null)
-				throw new ArgumentNullException("source");
-			if (keySelector == null)
-				throw new ArgumentNullException("keySelector");
+			return GroupConsecutiveImpl(source ?? throw new ArgumentNullException(nameof(source)),
+				keySelector ?? throw new ArgumentNullException(nameof(keySelector)),
+				EqualityComparer<TKey>.Default);
 
-			return GroupConsecutiveImpl(source, keySelector, EqualityComparer<TKey>.Default);
-		}
-
-		private static IEnumerable<IGrouping<TKey, TSource>> GroupConsecutiveImpl<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
-		{
-			using (IEnumerator<TSource> e = source.GetEnumerator())
+			static IEnumerable<IGrouping<TKey, TSource>> GroupConsecutiveImpl(IEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
 			{
+				using IEnumerator<TSource> e = source.GetEnumerator();
 				if (!e.MoveNext())
 					yield break;
 
@@ -69,7 +64,7 @@ namespace GitBlame.Utility
 		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> pairs)
 		{
 			var dict = new Dictionary<TKey, TValue>();
-			foreach (var pair in pairs)
+			foreach (var pair in pairs ?? throw new ArgumentNullException(nameof(pairs)))
 				dict.Add(pair.Key, pair.Value);
 			return dict;
 		}
@@ -78,61 +73,21 @@ namespace GitBlame.Utility
 		{
 			public Grouping(TKey key, ReadOnlyCollection<TSource> list)
 			{
-				m_key = key;
+				Key = key;
 				m_list = list;
 			}
 
-			public IEnumerator<TSource> GetEnumerator()
-			{
-				return m_list.GetEnumerator();
-			}
+			public IEnumerator<TSource> GetEnumerator() => m_list.GetEnumerator();
+			IEnumerator IEnumerable.GetEnumerator() => m_list.GetEnumerator();
+			public TKey Key { get; }
+			void ICollection<TSource>.Add(TSource item) => throw new NotSupportedException("Collection is read-only.");
+			void ICollection<TSource>.Clear() => throw new NotSupportedException("Collection is read-only.");
+			bool ICollection<TSource>.Contains(TSource item) => m_list.Contains(item);
+			void ICollection<TSource>.CopyTo(TSource[] array, int arrayIndex) => m_list.CopyTo(array, arrayIndex);
+			bool ICollection<TSource>.Remove(TSource item) => throw new NotSupportedException("Collection is read-only.");
+			public int Count => m_list.Count;
+			bool ICollection<TSource>.IsReadOnly => true;
 
-			IEnumerator IEnumerable.GetEnumerator()
-			{
-				return m_list.GetEnumerator();
-			}
-
-			public TKey Key
-			{
-				get { return m_key; }
-			}
-
-			void ICollection<TSource>.Add(TSource item)
-			{
-				throw new NotSupportedException("Collection is read-only.");
-			}
-
-			void ICollection<TSource>.Clear()
-			{
-				throw new NotSupportedException("Collection is read-only.");
-			}
-
-			bool ICollection<TSource>.Contains(TSource item)
-			{
-				return m_list.Contains(item);
-			}
-
-			void ICollection<TSource>.CopyTo(TSource[] array, int arrayIndex)
-			{
-				m_list.CopyTo(array, arrayIndex);
-			}
-
-			bool ICollection<TSource>.Remove(TSource item)
-			{
-				throw new NotSupportedException("Collection is read-only.");
-			}
-
-			public int Count
-			{
-				get { return m_list.Count; }
-			}
-
-			bool ICollection<TSource>.IsReadOnly
-			{
-				get { return true; }
-			}
-
-			readonly TKey m_key;
 			readonly ReadOnlyCollection<TSource> m_list;
 		}
 	}

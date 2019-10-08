@@ -1,4 +1,14 @@
-﻿/*
+﻿#pragma warning disable CA1051
+#pragma warning disable CA1055
+#pragma warning disable CA1062
+#pragma warning disable CA1707
+#pragma warning disable CA1720
+#pragma warning disable CA1801
+#pragma warning disable CA1825
+#pragma warning disable CA1827
+#pragma warning disable CA1829
+
+/*
  * Copyright 2008 Google Inc. All Rights Reserved.
  * Author: fraser@google.com (Neil Fraser)
  * Author: anteru@developer.shelter13.net (Matthaeus G. Chajdas)

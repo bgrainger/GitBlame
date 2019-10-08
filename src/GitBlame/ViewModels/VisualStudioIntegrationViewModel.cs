@@ -7,31 +7,28 @@ namespace GitBlame.ViewModels
 	{
 		public string Version
 		{
-			get { return m_version; }
-			set { this.RaiseAndSetIfChanged(ref m_version, value); }
+			get => m_version;
+			set => this.RaiseAndSetIfChanged(ref m_version, value);
 		}
 
-		public string Title
-		{
-			get { return "Visual Studio " + s_title[m_version]; }
-		}
+		public string Title => "Visual Studio " + s_title[m_version];
 
 		public bool IsChecked
 		{
-			get { return m_isChecked; }
-			set { this.RaiseAndSetIfChanged(ref m_isChecked, value); }
+			get => m_isChecked;
+			set => this.RaiseAndSetIfChanged(ref m_isChecked, value);
 		}
 
 		public VisualStudioIntegrationStatus IntegrationStatus
 		{
-			get { return m_integrationStatus; }
-			set { this.RaiseAndSetIfChanged(ref m_integrationStatus, value); }
+			get => m_integrationStatus;
+			set => this.RaiseAndSetIfChanged(ref m_integrationStatus, value);
 		}
 
 		public int? ToolIndex
 		{
-			get { return m_toolIndex; }
-			set { this.RaiseAndSetIfChanged(ref m_toolIndex, value); }
+			get => m_toolIndex;
+			set => this.RaiseAndSetIfChanged(ref m_toolIndex, value);
 		}
 
 		static readonly Dictionary<string, string> s_title = new Dictionary<string, string>

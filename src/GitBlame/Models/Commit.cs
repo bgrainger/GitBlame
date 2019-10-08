@@ -10,79 +10,25 @@ namespace GitBlame.Models
 		public Commit(string id, Person author, DateTimeOffset authorDate, Person committer, DateTimeOffset commitDate,
 			string summary, string previousCommitId, string previousFileName)
 		{
-			m_id = id;
-			m_author = author;
-			m_authorDate = authorDate;
-			m_committer = committer;
-			m_commitDate = commitDate;
-			m_summary = summary;
-			m_previousCommitId = previousCommitId;
-			m_previousFileName = previousFileName;
+			Id = id;
+			Author = author;
+			AuthorDate = authorDate;
+			Committer = committer;
+			CommitDate = commitDate;
+			Summary = summary;
+			PreviousCommitId = previousCommitId;
+			PreviousFileName = previousFileName;
 		}
 
-		public string Id
-		{
-			get { return m_id; }
-		}
-
-		public string ShortId
-		{
-			get { return m_id.Substring(0, 16); }
-		}
-
-		public Person Author
-		{
-			get { return m_author; }
-		}
-
-		public DateTimeOffset AuthorDate
-		{
-			get { return m_authorDate; }
-		}
-
-		public Person Committer
-		{
-			get { return m_committer; }
-		}
-
-		public DateTimeOffset CommitDate
-		{
-			get { return m_commitDate; }
-		}
-
-		public string Summary
-		{
-			get { return m_summary; }
-		}
-
-		public string PreviousCommitId
-		{
-			get { return m_previousCommitId; }
-		}
-
-		public string PreviousFileName
-		{
-			get { return m_previousFileName; }
-		}
-
-		public string Message
-		{
-			get { return m_message; }
-		}
-
-		public void SetMessage(string message)
-		{
-			m_message = message;
-		}
-
-		readonly string m_id;
-		readonly Person m_author;
-		readonly DateTimeOffset m_authorDate;
-		readonly Person m_committer;
-		readonly DateTimeOffset m_commitDate;
-		readonly string m_summary;
-		readonly string m_previousCommitId;
-		readonly string m_previousFileName;
-		string m_message;
+		public string Id { get; }
+		public string ShortId => Id[0..16];
+		public Person Author { get; }
+		public DateTimeOffset AuthorDate { get; }
+		public Person Committer { get; }
+		public DateTimeOffset CommitDate { get; }
+		public string Summary { get; }
+		public string PreviousCommitId { get; }
+		public string PreviousFileName { get; }
+		public string Message { get; set; }
 	}
 }

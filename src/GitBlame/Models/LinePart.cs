@@ -1,25 +1,14 @@
-﻿
-namespace GitBlame.Models
+﻿namespace GitBlame.Models
 {
-	internal struct LinePart
+	internal readonly struct LinePart
 	{
 		public LinePart(string text, LinePartStatus status)
 		{
-			m_text = text.Replace("\t", "	");
-			m_status = status;
+			Text = text;
+			Status = status;
 		}
 
-		public string Text
-		{
-			get { return m_text; }
-		}
-
-		public LinePartStatus Status
-		{
-			get { return m_status; }
-		}
-
-		readonly string m_text;
-		readonly LinePartStatus m_status;
+		public string Text { get; }
+		public LinePartStatus Status { get; }
 	}
 }

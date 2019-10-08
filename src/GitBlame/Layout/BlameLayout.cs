@@ -35,31 +35,16 @@ namespace GitBlame.Layout
 			m_columnWidths = new double[] { 210, 10, 0, 10, 5, 0 };
 
 			// set default values
-			m_lineHeight = 1;
-			m_topLineNumber = 1;
+			LineHeight = 1;
+			TopLineNumber = 1;
 		}
 
-		public int TopLineNumber
-		{
-			get { return m_topLineNumber; }
-		}
+		public int TopLineNumber { get; }
+		public int LineCount { get; }
+		public double LineHeight { get; }
+		public int AuthorCount => m_authorIndex.Count;
 
-		public int LineCount
-		{
-			get { return m_lineCount; }
-		}
-
-		public double LineHeight
-		{
-			get { return m_lineHeight; }
-		}
-
-		public int AuthorCount
-		{
-			get { return m_authorIndex.Count; }
-		}
-
-		public ReadOnlyCollection<DisplayBlock> Blocks
+		public IReadOnlyList<DisplayBlock> Blocks
 		{
 			get
 			{
@@ -68,7 +53,7 @@ namespace GitBlame.Layout
 			}
 		}
 
-		public ReadOnlyCollection<DisplayLine> Lines
+		public IReadOnlyList<DisplayLine> Lines
 		{
 			get
 			{
@@ -77,7 +62,7 @@ namespace GitBlame.Layout
 			}
 		}
 
-		public ReadOnlyCollection<Rect> NewLines
+		public IReadOnlyList<Rect> NewLines
 		{
 			get
 			{
@@ -86,60 +71,28 @@ namespace GitBlame.Layout
 			}
 		}
 
-		public Column CommitColumn
-		{
-			get { return GetColumn(c_commitColumnIndex); }
-		}
+		public Column CommitColumn => GetColumn(c_commitColumnIndex);
+		public Column LineNumberColumn => GetColumn(c_lineNumberColumnIndex);
+		public Column CodeMarginColumn => GetColumn(c_codeMarginColumnIndex);
+		public Column CodeColumn => GetColumn(c_codeColumnIndex);
+		public double Width => m_columnWidths.Sum();
 
-		public Column LineNumberColumn
-		{
-			get { return GetColumn(c_lineNumberColumnIndex); }
-		}
+		public BlameLayout Refresh(bool fullRefresh = false) => new BlameLayout(this, fullRefresh: fullRefresh);
 
-		public Column CodeMarginColumn
-		{
-			get { return GetColumn(c_codeMarginColumnIndex); }
-		}
+		public BlameLayout WithCodeWidth(double width) =>
+			width <= m_columnWidths[c_codeColumnIndex] ? this : new BlameLayout(this, codeColumnWidth: width);
 
-		public Column CodeColumn
-		{
-			get { return GetColumn(c_codeColumnIndex); }
-		}
+		public BlameLayout WithLineNumberWidth(double width) =>
+			width <= m_columnWidths[c_lineNumberColumnIndex] ? this : new BlameLayout(this, lineNumberColumnWidth: width);
 
-		public double Width
-		{
-			get { return m_columnWidths.Sum(); }
-		}
+		public BlameLayout WithLineHeight(double lineHeight) =>
+			lineHeight == LineHeight ? this : new BlameLayout(this, lineHeight: lineHeight);
 
-		public BlameLayout Refresh(bool fullRefresh = false)
-		{
-			return new BlameLayout(this, fullRefresh: fullRefresh);
-		}
+		public BlameLayout WithRenderSize(Size renderSize) =>
+			renderSize == m_renderSize ? this : new BlameLayout(this, renderSize: renderSize);
 
-		public BlameLayout WithCodeWidth(double width)
-		{
-			return width <= m_columnWidths[c_codeColumnIndex] ? this : new BlameLayout(this, codeColumnWidth: width);
-		}
-
-		public BlameLayout WithLineNumberWidth(double width)
-		{
-			return width <= m_columnWidths[c_lineNumberColumnIndex] ? this : new BlameLayout(this, lineNumberColumnWidth: width);
-		}
-
-		public BlameLayout WithLineHeight(double lineHeight)
-		{
-			return lineHeight == m_lineHeight ? this : new BlameLayout(this, lineHeight: lineHeight);
-		}
-
-		public BlameLayout WithRenderSize(Size renderSize)
-		{
-			return renderSize == m_renderSize ? this : new BlameLayout(this, renderSize: renderSize);
-		}
-
-		public BlameLayout WithTopLineNumber(int topLineNumber)
-		{
-			return topLineNumber == m_topLineNumber ? this : new BlameLayout(this, topLineNumber: topLineNumber);
-		}
+		public BlameLayout WithTopLineNumber(int topLineNumber) =>
+			topLineNumber == TopLineNumber ? this : new BlameLayout(this, topLineNumber: topLineNumber);
 
 		private BlameLayout()
 		{
@@ -160,9 +113,9 @@ namespace GitBlame.Layout
 			m_columnWidths = layout.m_columnWidths;
 
 			// copy or replace values from other BlameLayout
-			m_topLineNumber = topLineNumber ?? layout.m_topLineNumber;
+			TopLineNumber = topLineNumber ?? layout.TopLineNumber;
 			m_renderSize = renderSize ?? layout.m_renderSize;
-			m_lineHeight = lineHeight ?? layout.m_lineHeight;
+			LineHeight = lineHeight ?? layout.LineHeight;
 			m_columnWidths[c_lineNumberColumnIndex] = lineNumberColumnWidth ?? m_columnWidths[c_lineNumberColumnIndex];
 			m_columnWidths[c_codeColumnIndex] = codeColumnWidth ?? m_columnWidths[c_codeColumnIndex];
 			m_authorIndex = fullRefresh ? GetBlameAuthors(m_blame) : layout.m_authorIndex;
@@ -170,7 +123,7 @@ namespace GitBlame.Layout
 			m_dateScale = fullRefresh ? GetDateScale(m_blame, m_oldestCommit) : layout.m_dateScale;
 
 			// calculate new values
-			m_lineCount = (int) Math.Ceiling(m_renderSize.Height / m_lineHeight);
+			LineCount = (int) Math.Ceiling(m_renderSize.Height / LineHeight);
 		}
 
 		private void Calculate()
@@ -184,22 +137,22 @@ namespace GitBlame.Layout
 			for (; blockIndex < m_blame.Blocks.Count; blockIndex++)
 			{
 				Block block = m_blame.Blocks[blockIndex];
-				if (block.StartLine <= m_topLineNumber && block.StartLine + block.LineCount > m_topLineNumber)
+				if (block.StartLine <= TopLineNumber && block.StartLine + block.LineCount > TopLineNumber)
 					break;
 			}
 
 			// determine the position of each block that is displayed
 			int lineCount = 0;
-			while (lineCount < m_lineCount && blockIndex < m_blame.Blocks.Count)
+			while (lineCount < LineCount && blockIndex < m_blame.Blocks.Count)
 			{
 				Block block = m_blame.Blocks[blockIndex];
-				int hiddenLines = m_topLineNumber - block.StartLine;
-				int remainingLines = m_lineCount - lineCount;
+				int hiddenLines = TopLineNumber - block.StartLine;
+				int remainingLines = LineCount - lineCount;
 				int linesFromThisBlock = Math.Min(block.LineCount - Math.Max(0, hiddenLines), remainingLines);
 				double alpha = 0.75 - (block.Commit.CommitDate - m_oldestCommit).TotalDays * m_dateScale;
 
 				const double authorWidth = 10;
-				Rect authorPosition = new Rect(0, lineCount * m_lineHeight, authorWidth, linesFromThisBlock * m_lineHeight);
+				Rect authorPosition = new Rect(0, lineCount * LineHeight, authorWidth, linesFromThisBlock * LineHeight);
 				Rect commitPosition = new Rect(authorWidth, authorPosition.Top, m_columnWidths[0] - authorWidth, authorPosition.Height);
 
 				// add the commit summary if there is space
@@ -209,8 +162,8 @@ namespace GitBlame.Layout
 				{
 					summaryPosition = commitPosition;
 					summaryPosition.Inflate(-1, -1);
-					summaryPosition.Offset(0, m_lineHeight);
-					summaryPosition.Height = Math.Min(summaryPosition.Height - m_lineHeight, m_renderSize.Height);
+					summaryPosition.Offset(0, LineHeight);
+					summaryPosition.Height = Math.Min(summaryPosition.Height - LineHeight, m_renderSize.Height);
 				}
 
 				m_blocks.Add(new DisplayBlock(authorPosition, commitPosition, summaryPosition, alpha, m_authorIndex.ContainsKey(block.Commit.Author) ? m_authorIndex[block.Commit.Author] : 0, block));
@@ -220,11 +173,11 @@ namespace GitBlame.Layout
 			}
 
 			// determine the source code lines that are visible
-			m_lines.Capacity = m_lineCount;
+			m_lines.Capacity = LineCount;
 			m_lines.AddRange(m_blame.Lines
-				.Skip(m_topLineNumber - 1)
-				.Take(m_lineCount)
-				.Select((l, n) => new DisplayLine(l, n + m_topLineNumber)));
+				.Skip(TopLineNumber - 1)
+				.Take(LineCount)
+				.Select((l, n) => new DisplayLine(l, n + TopLineNumber)));
 
 			// determine which of those lines are new in their respective commits
 			lineCount = 0;
@@ -232,30 +185,22 @@ namespace GitBlame.Layout
 			foreach (var lineGroup in m_lines.GroupConsecutiveBy(l => l.IsNew))
 			{
 				if (lineGroup.Key)
-					m_newLines.Add(new Rect(newLineX, lineCount * m_lineHeight, 5, lineGroup.Count() * m_lineHeight));
+					m_newLines.Add(new Rect(newLineX, lineCount * LineHeight, 5, lineGroup.Count() * LineHeight));
 
 				lineCount += lineGroup.Count();
 			}
 		}
 
-		private Column GetColumn(int index)
-		{
-			return new Column(m_columnWidths.Take(index).Sum(), m_columnWidths[index]);
-		}
+		private Column GetColumn(int index) => new Column(m_columnWidths.Take(index).Sum(), m_columnWidths[index]);
 
-		private static Dictionary<Person, int> GetBlameAuthors(BlameResult blame)
-		{
-			return blame.Commits
+		private static Dictionary<Person, int> GetBlameAuthors(BlameResult blame) =>
+			blame.Commits
 				.GroupBy(c => c.Author)
 				.OrderByDescending(g => g.Count())
 				.Select((g, n) => new KeyValuePair<Person, int>(g.Key, n))
 				.ToDictionary();
-		}
 
-		private static DateTimeOffset GetOldestCommit(BlameResult blame)
-		{
-			return blame.Commits.Min(c => c.AuthorDate);
-		}
+		private static DateTimeOffset GetOldestCommit(BlameResult blame) => blame.Commits.Min(c => c.AuthorDate);
 
 		private static double GetDateScale(BlameResult blame, DateTimeOffset oldestCommit)
 		{
@@ -274,154 +219,66 @@ namespace GitBlame.Layout
 		readonly double m_dateScale;
 
 		readonly double[] m_columnWidths;
-		readonly int m_topLineNumber;
 		readonly Size m_renderSize;
-		readonly double m_lineHeight;
-		readonly int m_lineCount;
 		readonly List<DisplayBlock> m_blocks;
-		readonly ReadOnlyCollection<DisplayBlock> m_blocksReadOnly;
+		readonly IReadOnlyList<DisplayBlock> m_blocksReadOnly;
 		readonly List<DisplayLine> m_lines;
-		readonly ReadOnlyCollection<DisplayLine> m_linesReadOnly;
+		readonly IReadOnlyList<DisplayLine> m_linesReadOnly;
 		readonly List<Rect> m_newLines;
-		readonly ReadOnlyCollection<Rect> m_newLinesReadOnly;
+		readonly IReadOnlyList<Rect> m_newLinesReadOnly;
 	}
 
-	internal struct Column
+	internal readonly struct Column
 	{
 		public Column(double left, double width)
 		{
-			m_left = left;
-			m_width = width;
+			Left = left;
+			Width = width;
 		}
 
-		public double Left
-		{
-			get { return m_left; }
-		}
-
-		public double Width
-		{
-			get { return m_width; }
-		}
-
-		public double Right
-		{
-			get { return m_left + m_width; }
-		}
-
-		readonly double m_left;
-		readonly double m_width;
+		public double Left { get; }
+		public double Width { get; }
+		public double Right => Left + Width;
 	}
 
 	internal sealed class DisplayBlock
 	{
 		public DisplayBlock(Rect authorPosition, Rect commitPosition, Rect summaryPosition, double alpha, int authorIndex, Block block)
 		{
-			m_authorPosition = authorPosition;
-			m_commitPosition = commitPosition;
-			m_summaryPosition = summaryPosition;
-			m_alpha = alpha;
-			m_authorIndex = authorIndex;
-			m_block = block;
-			m_commit = block.Commit;
+			AuthorPosition = authorPosition;
+			CommitPosition = commitPosition;
+			SummaryPosition = summaryPosition;
+			Alpha = alpha;
+			AuthorIndex = authorIndex;
+			RawBlock = block;
+			RawCommit = block.Commit;
 		}
 
-		public Block RawBlock
-		{
-			get { return m_block; }
-		}
-
-		public Commit RawCommit
-		{
-			get { return m_commit; }
-		}
-
-		public string CommitId
-		{
-			get { return m_commit.Id; }
-		}
-
-		public Rect AuthorPosition
-		{
-			get { return m_authorPosition; }
-		}
-
-		public Rect CommitPosition
-		{
-			get { return m_commitPosition; }
-		}
-
-		public double AuthorX
-		{
-			get { return m_commitPosition.Left + 1; }
-		}
-
-		public double AuthorWidth
-		{
-			get { return m_commitPosition.Width - DateWidth - 5; }
-		}
-
-		public double TextY
-		{
-			get { return m_commitPosition.Top + 1; }
-		}
-
-		public double DateX
-		{
-			get { return m_commitPosition.Width - 1 - DateWidth; }
-		}
-
-		public double DateWidth
-		{
-			get { return m_commitPosition.Width * 0.425; }
-		}
-
-		public double Alpha
-		{
-			get { return m_alpha; }
-		}
-
-		public int AuthorIndex
-		{
-			get { return m_authorIndex; }
-		}
-
-		public string AuthorName
-		{
-			get { return m_commit.Author.Name; }
-		}
-
-		public string Date
-		{
-			get { return m_commit.AuthorDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture); }
-		}
-
-		public bool ShowsSummary
-		{
-			get { return !m_summaryPosition.IsEmpty; }
-		}
-
-		public Rect SummaryPosition
-		{
-			get { return m_summaryPosition; }
-		}
+		public Block RawBlock { get; }
+		public Commit RawCommit { get; }
+		public string CommitId => RawCommit.Id;
+		public Rect AuthorPosition { get; }
+		public Rect CommitPosition { get; }
+		public double AuthorX => CommitPosition.Left + 1;
+		public double AuthorWidth => CommitPosition.Width - DateWidth - 5;
+		public double TextY => CommitPosition.Top + 1;
+		public double DateX => CommitPosition.Width - 1 - DateWidth;
+		public double DateWidth => CommitPosition.Width * 0.425;
+		public double Alpha { get; }
+		public int AuthorIndex { get; }
+		public string AuthorName => RawCommit.Author.Name;
+		public string Date => RawCommit.AuthorDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+		public bool ShowsSummary => !SummaryPosition.IsEmpty;
+		public Rect SummaryPosition { get; }
 
 		public string Summary
 		{
 			get
 			{
 				// allow line breaks in "Long.Dotted.Identifiers" by inserting a zero-width space
-				return Regex.Replace(m_commit.Summary, @"\.([A-Z, ])", ".\u200B$1");
+				return Regex.Replace(RawCommit.Summary, @"\.([A-Z, ])", ".\u200B$1");
 			}
 		}
-
-		readonly Rect m_authorPosition;
-		readonly Rect m_commitPosition;
-		readonly Rect m_summaryPosition;
-		readonly double m_alpha;
-		readonly int m_authorIndex;
-		readonly Block m_block;
-		readonly Commit m_commit;
 	}
 
 	internal sealed class DisplayLine
@@ -429,25 +286,13 @@ namespace GitBlame.Layout
 		public DisplayLine(Line line, int lineNumber)
 		{
 			m_line = line;
-			m_lineNumber = lineNumber;
+			LineNumber = lineNumber;
 		}
 
-		public bool IsNew
-		{
-			get { return m_line.IsNew; }
-		}
-
-		public ReadOnlyCollection<LinePart> Parts
-		{
-			get { return m_line.Parts; }
-		}
-
-		public int LineNumber
-		{
-			get { return m_lineNumber; }
-		}
+		public bool IsNew => m_line.IsNew;
+		public IReadOnlyList<LinePart> Parts => m_line.Parts;
+		public int LineNumber { get; }
 
 		readonly Line m_line;
-		readonly int m_lineNumber;
 	}
 }

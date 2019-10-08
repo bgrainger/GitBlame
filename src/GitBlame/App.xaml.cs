@@ -35,8 +35,7 @@ namespace GitBlame
 
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{
-				var exception = ea.ExceptionObject as Exception;
-				if (exception != null)
+				if (ea.ExceptionObject is Exception exception)
 				{
 					Log.FatalFormat("Unhandled Exception: {0} {1}", exception, exception.GetType(), exception.Message);
 #if !DEVELOPMENT
@@ -86,8 +85,8 @@ namespace GitBlame
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
 
-			await sessionStart;
-			await m_analyticsClient.SubmitAppViewAsync("MainWindow");
+			await sessionStart.ConfigureAwait(true);
+			await m_analyticsClient.SubmitAppViewAsync("MainWindow").ConfigureAwait(true);
 		}
 
 		protected override void OnExit(ExitEventArgs e)

@@ -11,10 +11,11 @@ using Microsoft.Win32;
 
 namespace GitBlame.Analytics
 {
-	/// <summary>
-	/// <see cref="GoogleAnalyticsClient"/> reports basic usage statistics to Google Analytics.
-	/// </summary>
-	internal class GoogleAnalyticsClient
+#pragma warning disable CA1001 // disposable HttpClient field
+    /// <summary>
+    /// <see cref="GoogleAnalyticsClient"/> reports basic usage statistics to Google Analytics.
+    /// </summary>
+    internal class GoogleAnalyticsClient
 	{
 		public GoogleAnalyticsClient(string trackingId, string appName, GoogleAnalyticsStatisticsProvider provider)
 		{
@@ -29,32 +30,20 @@ namespace GitBlame.Analytics
 			m_httpClient.Timeout = TimeSpan.FromSeconds(3);
 		}
 
-		public Task SubmitAppViewAsync(string description)
-		{
-			return SubmitAsync("t", "appview", "cd", description);
-		}
+		public Task SubmitAppViewAsync(string description) => SubmitAsync("t", "appview", "cd", description);
 
-		public Task SubmitExceptionAsync(Exception ex, bool isFatal)
-		{
-			return SubmitAsync("t", "exception", "exd", ex.GetType().Name, "exf", isFatal ? "1" : "0");
-		}
+		public Task SubmitExceptionAsync(Exception ex, bool isFatal) => SubmitAsync("t", "exception", "exd", ex.GetType().Name, "exf", isFatal ? "1" : "0");
 
-		public Task SubmitSessionStartAsync()
-		{
-			return SubmitAsync("t", "event", "sc", "start", "ec", "Session", "ea", "Start");
-		}
+		public Task SubmitSessionStartAsync() => SubmitAsync("t", "event", "sc", "start", "ec", "Session", "ea", "Start");
 
-		public Task SubmitSessionEndAsync()
-		{
-			return SubmitAsync("t", "event", "sc", "end", "ec", "Session", "ea", "End");
-		}
+		public Task SubmitSessionEndAsync() => SubmitAsync("t", "event", "sc", "end", "ec", "Session", "ea", "End");
 
 		private async Task SubmitAsync(params string[] namesAndValues)
 		{
 			// get system properties
-			string language = CultureInfo.CurrentUICulture.Name;
-			string screenResolution = "{0}x{1}".FormatInvariant(m_provider.ScreenWidth, m_provider.ScreenHeight);
-			string screenBitDepth = "{0}-bits".FormatInvariant(m_provider.ScreenColorDepth);
+			var language = CultureInfo.CurrentUICulture.Name;
+			var screenResolution = "{0}x{1}".FormatInvariant(m_provider.ScreenWidth, m_provider.ScreenHeight);
+			var screenBitDepth = "{0}-bits".FormatInvariant(m_provider.ScreenColorDepth);
 
 			// build the payload; parameter names taken from https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
 			StringBuilder sb = new StringBuilder();
@@ -75,7 +64,8 @@ namespace GitBlame.Analytics
 			Uri uri = new Uri("https://ssl.google-analytics.com/collect");
 			try
 			{
-				await m_httpClient.PostAsync(uri, new StringContent(sb.ToString())).ConfigureAwait(false);
+                using var content = new StringContent(sb.ToString());
+				await m_httpClient.PostAsync(uri, content).ConfigureAwait(false);
 				Log.InfoFormat("Successfully posted {0}", sb.ToString());
 			}
 			catch (HttpRequestException ex)
@@ -92,19 +82,15 @@ namespace GitBlame.Analytics
 		{
 			try
 			{
-				using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\GitBlame"))
+				using RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\GitBlame");
+				if (key is object)
 				{
-					if (key != null)
+					if (!Guid.TryParse(key.GetValue("AnalyticsId") as string, out var clientId))
 					{
-						Guid clientId;
-						string analyticsId = key.GetValue("AnalyticsId") as string;
-						if (!Guid.TryParse(analyticsId, out clientId))
-						{
-							clientId = Guid.NewGuid();
-							key.SetValue("AnalyticsId", clientId.ToString("d"));
-						}
-						return clientId;
+						clientId = Guid.NewGuid();
+						key.SetValue("AnalyticsId", clientId.ToString("d"));
 					}
+					return clientId;
 				}
 			}
 			catch (FormatException)
@@ -117,8 +103,8 @@ namespace GitBlame.Analytics
 			{
 			}
 
-			// NOTE: using "new Guid" to create empty GUID for failure
-			return new Guid();
+			// NOTE: using "default" to create empty GUID for failure
+			return default;
 		}
 
 		// URL-encodes a query parameter name and value, and adds it to 'sb'.

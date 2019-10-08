@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.Linq;
 using GitBlame.Utility;
 
@@ -8,42 +8,22 @@ namespace GitBlame.Models
 	{
 		public Line(int lineNumber, string text, bool isNew)
 		{
-			m_lineNumber = lineNumber;
-			m_isNew = isNew;
-			m_parts = new[] { new LinePart(text, isNew ? LinePartStatus.New : LinePartStatus.Existing) }.AsReadOnly();
+			LineNumber = lineNumber;
+			IsNew = isNew;
+			Parts = new[] { new LinePart(text, isNew ? LinePartStatus.New : LinePartStatus.Existing) };
 		}
 
-		public Line(int lineNumber, int oldLineNumber, ReadOnlyCollection<LinePart> parts)
+		public Line(int lineNumber, int oldLineNumber, IReadOnlyList<LinePart> parts)
 		{
-			m_lineNumber = lineNumber;
-			m_oldLineNumber = oldLineNumber;
-			m_isNew = parts.All(p => p.Status == LinePartStatus.New);
-			m_parts = parts;
+			LineNumber = lineNumber;
+			OldLineNumber = oldLineNumber;
+			IsNew = parts.All(p => p.Status == LinePartStatus.New);
+			Parts = parts;
 		}
 
-		public int LineNumber
-		{
-			get { return m_lineNumber; }
-		}
-
-		public int OldLineNumber
-		{
-			get { return m_oldLineNumber; }
-		}
-
-		public bool IsNew
-		{
-			get { return m_isNew; }
-		}
-
-		public ReadOnlyCollection<LinePart> Parts
-		{
-			get { return m_parts; }
-		}
-
-		readonly int m_lineNumber;
-		readonly int m_oldLineNumber;
-		readonly bool m_isNew;
-		readonly ReadOnlyCollection<LinePart> m_parts;
+		public int LineNumber { get; }
+		public int OldLineNumber { get; }
+		public bool IsNew { get; }
+		public IReadOnlyList<LinePart> Parts { get; }
 	}
 }

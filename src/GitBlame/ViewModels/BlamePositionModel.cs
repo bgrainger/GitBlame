@@ -9,22 +9,14 @@ namespace GitBlame.ViewModels
 	{
 		public BlamePositionModel(string filePath)
 		{
-			if (filePath == null)
-				throw new ArgumentNullException("filePath");
-
-			m_filePath = filePath;
+			m_filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
 			GitWrapper.SplitRepositoryPath(filePath, out m_repoPath, out m_fileName);
 		}
 
 		public BlamePositionModel(string repoPath, string fileName)
 		{
-			if (repoPath == null)
-				throw new ArgumentNullException("repoPath");
-			if (fileName == null)
-				throw new ArgumentNullException("fileName");
-
-			m_repoPath = repoPath;
-			m_fileName = fileName;
+			m_repoPath = repoPath ?? throw new ArgumentNullException(nameof(repoPath));
+			m_fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
 			m_filePath = Path.Combine(Path.GetDirectoryName(m_repoPath), m_fileName);
 		}
 

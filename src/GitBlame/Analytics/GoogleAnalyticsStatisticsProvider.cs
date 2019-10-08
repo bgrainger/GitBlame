@@ -10,20 +10,16 @@ using Microsoft.Win32;
 
 namespace GitBlame.Analytics
 {
-	internal sealed class GoogleAnalyticsStatisticsProvider
+#pragma warning disable CA1060 // P/Invoke methods in NativeMethods class
+    internal sealed class GoogleAnalyticsStatisticsProvider
 	{
 		public GoogleAnalyticsStatisticsProvider()
 		{
 		}
 
 		public int ScreenWidth => (int) SystemParameters.PrimaryScreenWidth;
-
 		public int ScreenHeight => (int) SystemParameters.PrimaryScreenHeight;
-
-		public int ScreenColorDepth
-		{
-			get { return 32; }
-		}
+		public int ScreenColorDepth => 32;
 
 		public string OperatingSystemVersion
 		{
@@ -81,28 +77,22 @@ namespace GitBlame.Analytics
 				Version ieVersion = null;
 				try
 				{
-					using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\App Paths\IEXPLORE.EXE"))
+					using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\App Paths\IEXPLORE.EXE");
+					var exeFileLocation = key?.GetValue("Path") as string;
+					if (!string.IsNullOrEmpty(exeFileLocation))
 					{
-						if (key != null)
+						try
 						{
-							string exeFileLocation = key.GetValue("Path") as string;
-							if (!string.IsNullOrEmpty(exeFileLocation))
-							{
-								try
-								{
-									exeFileLocation = exeFileLocation.Replace("\\", @"\").Replace(";", @"\iexplore.exe");
-									FileVersionInfo exeVersionInfo = FileVersionInfo.GetVersionInfo(exeFileLocation);
-									Version fileIeVersion;
-									if (Version.TryParse(exeVersionInfo.ProductVersion, out fileIeVersion))
-										ieVersion = fileIeVersion;
-								}
-								catch (ArgumentException)
-								{
-								}
-								catch (FileNotFoundException)
-								{
-								}
-							}
+							exeFileLocation = exeFileLocation.Replace("\\", @"\").Replace(";", @"\iexplore.exe");
+							var exeVersionInfo = FileVersionInfo.GetVersionInfo(exeFileLocation);
+							if (Version.TryParse(exeVersionInfo.ProductVersion, out var fileIeVersion))
+								ieVersion = fileIeVersion;
+						}
+						catch (ArgumentException)
+						{
+						}
+						catch (FileNotFoundException)
+						{
 						}
 					}
 				}
@@ -111,22 +101,16 @@ namespace GitBlame.Analytics
 				}
 
 				// if unable to get version from .exe try to get IE version from registry
-				if (ieVersion == null)
+				if (ieVersion is null)
 				{
 					// use IE5.5 as a sentinel meaning "couldn't determine version"
 					ieVersion = new Version(5, 5);
 					try
 					{
-						using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Internet Explorer", false))
-						{
-							if (key != null)
-							{
-								string registryVersion = key.GetValue("Version") as string;
-								Version registryIeVersion;
-								if (Version.TryParse(registryVersion, out registryIeVersion))
-									ieVersion = registryIeVersion;
-							}
-						}
+						using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Internet Explorer", false);
+						var registryVersion = key?.GetValue("Version") as string;
+						if (Version.TryParse(registryVersion, out var registryIeVersion))
+							ieVersion = registryIeVersion;
 					}
 					catch (SecurityException)
 					{
@@ -141,10 +125,7 @@ namespace GitBlame.Analytics
 			}
 		}
 
-		public string ApplicationVersion
-		{
-			get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); }
-		}
+		public string ApplicationVersion => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
 		[DllImport("Kernel32.dll", ExactSpelling = true)]
 		static extern IntPtr GetCurrentProcess();

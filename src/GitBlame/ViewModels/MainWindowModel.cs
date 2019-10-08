@@ -13,10 +13,10 @@ namespace GitBlame.ViewModels
 			m_positionHistory = new Stack<BlamePositionModel>();
 			m_positionFuture = new Stack<BlamePositionModel>();
 
-			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x == null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
+			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x is null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value)
-				.Select(x => x == null ? new OpenFileNotification() : x.RepoPath == null ? new OpenFileNotification(x.FilePath) : null);
+				.Select(x => x is null ? new OpenFileNotification() : x.RepoPath is null ? new OpenFileNotification(x.FilePath) : null);
 			var notifications = openFileNotifications.Cast<NotificationBase>().StartWith(default(NotificationBase)).CombineLatest(
 					VisualStudioIntegration.Check().Cast<NotificationBase>().StartWith(default(NotificationBase)),
 					(of, vs) => of ?? vs)
@@ -26,10 +26,10 @@ namespace GitBlame.ViewModels
 
 		public BlamePositionModel Position
 		{
-			get { return m_position; }
+			get => m_position;
 			private set
 			{
-				if (value == null)
+				if (value is null)
 					Log.Info("Position := (null)");
 				else
 					Log.InfoFormat("Position := Repo={0}, File={1}, CommitId={2}, LineNumber={3}", value.RepoPath, value.FileName, value.CommitId, value.LineNumber);
@@ -40,9 +40,9 @@ namespace GitBlame.ViewModels
 
 		public void NavigateTo(BlamePositionModel position)
 		{
-			Log.DebugFormat("NavigateTo({0})", position == null ? "null" : "position");
+			Log.DebugFormat("NavigateTo({0})", position is null ? "null" : "position");
 
-			if (Position != null)
+			if (Position is object)
 				m_positionHistory.Push(Position);
 			m_positionFuture.Clear();
 			Position = position;
@@ -68,15 +68,9 @@ namespace GitBlame.ViewModels
 			}
 		}
 
-		public NotificationBase Notification
-		{
-			get { return m_notification.Value; }
-		}
+		public NotificationBase Notification => m_notification.Value;
 
-		public string WindowTitle
-		{
-			get { return m_windowTitle.Value; }
-		}
+		public string WindowTitle => m_windowTitle.Value;
 
 		static readonly ILog Log = LogManager.GetLogger("MainWindow");
 

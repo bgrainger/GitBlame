@@ -14,7 +14,7 @@ using LibGit2Sharp;
 
 namespace GitBlame.Models
 {
-	internal sealed class GitWrapper
+	internal static class GitWrapper
 	{
 		public const string UncommittedChangesCommitId = "0000000000000000000000000000000000000000";
 
@@ -22,21 +22,18 @@ namespace GitBlame.Models
 		{
 			string[] fileLines;
 
-			if (blameCommitId == null)
+			if (blameCommitId is null)
 			{
 				fileLines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(repositoryPath), fileName));
 				if (fileLines.Length > 0 && !string.IsNullOrEmpty(fileLines[0]) && fileLines[0][0] == '\uFEFF')
-					fileLines[0] = fileLines[0].Substring(1);
+					fileLines[0] = fileLines[0][1..];
 			}
 			else
 			{
+				using var reader = new StringReader(GetFileContent(repositoryPath, blameCommitId, fileName));
 				List<string> lines = new List<string>();
-				using (StringReader reader = new StringReader(GetFileContent(repositoryPath, blameCommitId, fileName)))
-				{
-					string line;
-					while ((line = reader.ReadLine()) != null)
-						lines.Add(line);
-				}
+				while (reader.ReadLine() is string line)
+					lines.Add(line);
 				fileLines = lines.ToArray();
 			}
 
@@ -55,16 +52,8 @@ namespace GitBlame.Models
 					.Select(x =>
 					{
 						Match m = Regex.Match(x.Url, @"^(git@(?'host'[^:]+):(?'user'[^/]+)/(?'repo'[^/]+)\.git|(git|https?)://(?'host'[^/]+)/(?'user'[^/]+)/(?'repo'[^/]+)\.git)$", RegexOptions.ExplicitCapture);
-						if (m.Success)
-						{
-							string host = m.Groups["host"].Value;
-							return new Uri(string.Format("http{0}://{1}/{2}/{3}/", host == "github.com" ? "s" : "", host, m.Groups["user"].Value, m.Groups["repo"].Value));
-						}
-						else
-						{
-							return null;
-						}
-					}).FirstOrDefault(x => x != null);
+						return m.Success ? new Uri($"https://{m.Groups["host"].Value}/{m.Groups["user"].Value}/{m.Groups["repo"].Value}/") : null;
+					}).FirstOrDefault(x => x is object);
 
 				var loadingPerson = new Person("Loading…", "loading");
 				var commit = new Commit(UncommittedChangesCommitId, loadingPerson, DateTimeOffset.Now, loadingPerson, DateTimeOffset.Now, "", null, null);
@@ -104,9 +93,9 @@ namespace GitBlame.Models
 #endif
 
 				// run "git blame"
-				ExternalProcess git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
-				List<string> arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
-				if (blameCommitId != null)
+				var git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
+				var arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
+				if (blameCommitId is object)
 					arguments.Add(blameCommitId);
 				arguments.AddRange(new[] { "--", fileName });
 				var results = git.Run(new ProcessRunSettings(arguments.ToArray()));
@@ -114,8 +103,8 @@ namespace GitBlame.Models
 					return;
 
 				// parse output
-				List<Block> blocks = new List<Block>();
-				Dictionary<string, Commit> commits = new Dictionary<string, Commit>();
+				var blocks = new List<Block>();
+				var commits = new Dictionary<string, Commit>();
 				ParseBlameOutput(results.Output, blocks, commits);
 
 				// allocate a (1-based) array for all lines in the file
@@ -139,11 +128,11 @@ namespace GitBlame.Models
 					string commitId = commit.Id;
 					string previousCommitId = commit.PreviousCommitId;
 
-					if (previousCommitId != null)
+					if (previousCommitId is object)
 					{
 						// diff the old and new file contents when they become available
-						Task<string> getOldFileContentTask = getFileContentTasks[previousCommitId];
-						Task<string> getNewFileContentTask = getFileContentTasks[commitId];
+						var getOldFileContentTask = getFileContentTasks[previousCommitId];
+						var getNewFileContentTask = getFileContentTasks[commitId];
 						Task.Factory.ContinueWhenAll(new[] { getOldFileContentTask, getNewFileContentTask }, tasks =>
 						{
 							// diff the two versions
@@ -158,34 +147,33 @@ namespace GitBlame.Models
 							diff.diff_cleanupSemantic(diffs);
 
 							// process all the lines in the diff output, matching them to blocks
-							using (IEnumerator<Line> lineEnumerator = ParseDiffOutput(diffs).GetEnumerator())
+							using var lineEnumerator = ParseDiffOutput(diffs).GetEnumerator();
+							
+							// move to first line (which is expected to always be present)
+							Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
+							Line line = lineEnumerator.Current;
+
+							// process all the blocks, finding the corresponding lines from the diff for each one
+							foreach (Block block in group)
 							{
-								// move to first line (which is expected to always be present)
-								Invariant.Assert(lineEnumerator.MoveNext(), "Expected at least one line from diff output.");
-								Line line = lineEnumerator.Current;
-
-								// process all the blocks, finding the corresponding lines from the diff for each one
-								foreach (Block block in group)
+								// skip all lines that occurred before the start of this block
+								while (line.LineNumber < block.OriginalStartLine)
 								{
-									// skip all lines that occurred before the start of this block
-									while (line.LineNumber < block.OriginalStartLine)
-									{
-										Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
+									Invariant.Assert(lineEnumerator.MoveNext(), "diff does not contain the expected number of lines.");
+									line = lineEnumerator.Current;
+								}
+
+								// process all lines in the current block
+								while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
+								{
+									// assign this line to the correct index in the blamed version of the file
+									blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
+
+									// move to the next line (if available)
+									if (lineEnumerator.MoveNext())
 										line = lineEnumerator.Current;
-									}
-
-									// process all lines in the current block
-									while (line.LineNumber >= block.OriginalStartLine && line.LineNumber < block.OriginalStartLine + block.LineCount)
-									{
-										// assign this line to the correct index in the blamed version of the file
-										blameResult.SetLine(line.LineNumber - block.OriginalStartLine + block.StartLine, line);
-
-										// move to the next line (if available)
-										if (lineEnumerator.MoveNext())
-											line = lineEnumerator.Current;
-										else
-											break;
-									}
+									else
+										break;
 								}
 							}
 						});
@@ -206,63 +194,55 @@ namespace GitBlame.Models
 		private static void ParseBlameOutput(string output, List<Block> blocks, Dictionary<string, Commit> commits)
 		{
 			// read entire output of "git blame"
-			using (StringReader reader = new StringReader(output))
+			using StringReader reader = new StringReader(output);
+			while (reader.ReadLine() is string line)
 			{
-				string line;
-				while ((line = reader.ReadLine()) != null)
+				// read beginning line in block, with format "hash origLine startLine lineCount"
+				var components = line.Split(' ');
+				var commitId = components[0];
+				int originalStartLine = int.Parse(components[1], CultureInfo.InvariantCulture);
+				int startLine = int.Parse(components[2], CultureInfo.InvariantCulture);
+				int lineCount = int.Parse(components[3], CultureInfo.InvariantCulture);
+
+				// read "tag value" pairs from block header, knowing that "filename" tag always ends the block
+				var tagValues = new Dictionary<string, string>();
+				do
 				{
-					// read beginning line in block, with format "hash origLine startLine lineCount"
-					string[] components = line.Split(' ');
-					string commitId = components[0];
-					int originalStartLine = int.Parse(components[1], CultureInfo.InvariantCulture);
-					int startLine = int.Parse(components[2], CultureInfo.InvariantCulture);
-					int lineCount = int.Parse(components[3], CultureInfo.InvariantCulture);
+					line = reader.ReadLine();
+					var tagValue = line.SplitOnSpace();
+					tagValues.Add(tagValue.Before, tagValue.After);
+				} while (!tagValues.ContainsKey("filename"));
 
-					// read "tag value" pairs from block header, knowing that "filename" tag always ends the block
-					Dictionary<string, string> tagValues = new Dictionary<string, string>();
-					Tuple<string, string> tagValue;
-					do
-					{
-						line = reader.ReadLine();
-						tagValue = line.SplitOnSpace();
-						tagValues.Add(tagValue.Item1, tagValue.Item2);
-					} while (tagValue.Item1 != "filename");
-
-					// check if this is a new commit
-					Commit commit;
-					if (!commits.TryGetValue(commitId, out commit))
-					{
-						commit = CreateCommit(commitId, tagValues);
-						commits.Add(commitId, commit);
-					}
-
-					// add this block to the output, ordered by its StartLine
-					Block block = new Block(startLine, lineCount, commit, tagValues["filename"], originalStartLine);
-					int index = blocks.BinarySearch(block, new GenericComparer<Block>((l, r) => l.StartLine.CompareTo(r.StartLine)));
-					Debug.Assert(index < 0, "index < 0", "New block should not already be in the list.");
-					if (index < 0)
-						blocks.Insert(~index, block);
+				// check if this is a new commit
+				if (!commits.TryGetValue(commitId, out var commit))
+				{
+					commit = CreateCommit(commitId, tagValues);
+					commits.Add(commitId, commit);
 				}
+
+				// add this block to the output, ordered by its StartLine
+				Block block = new Block(startLine, lineCount, commit, tagValues["filename"], originalStartLine);
+				int index = blocks.BinarySearch(block, new GenericComparer<Block>((l, r) => l.StartLine.CompareTo(r.StartLine)));
+				Debug.Assert(index < 0, "index < 0", "New block should not already be in the list.");
+				if (index < 0)
+					blocks.Insert(~index, block);
 			}
 		}
 
 		private static Dictionary<string, Task<string>> CreateGetFileContentTasks(string repositoryPath, List<Block> blocks, Dictionary<string, Commit> commits, string[] currentLines)
 		{
-			Dictionary<string, Task<string>> getFileContentTasks;
-			using (var repo = new Repository(repositoryPath))
-			{
-				getFileContentTasks = blocks
-					.SelectMany(b => new[]
-					{
-						new { CommitId = b.Commit.Id, b.FileName },
-						new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
-					})
-					.Distinct()
-					.Where(c => c.CommitId != null && c.CommitId != UncommittedChangesCommitId)
-					.ToDictionary(
-						c => c.CommitId,
-						c => Task.FromResult(GetFileContent(repo, commits, c.CommitId, c.FileName)));
-			}
+			using var repo = new Repository(repositoryPath);
+			var getFileContentTasks = blocks
+				.SelectMany(b => new[]
+				{
+					new { CommitId = b.Commit.Id, b.FileName },
+					new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
+				})
+				.Distinct()
+				.Where(c => c.CommitId is object && c.CommitId != UncommittedChangesCommitId)
+				.ToDictionary(
+					c => c.CommitId,
+					c => Task.FromResult(GetFileContent(repo, commits, c.CommitId, c.FileName)));
 
 			// add a task that returns the current version of the file
 			getFileContentTasks.Add(UncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
@@ -276,20 +256,17 @@ namespace GitBlame.Models
 			var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
 
 			// save the commit message
-			Commit commit;
-			if (commits.TryGetValue(commitId, out commit))
-				commit.SetMessage(gitCommit.Message);
+			if (commits.TryGetValue(commitId, out var commit))
+				commit.Message = gitCommit.Message;
 
 			return GetFileContent(gitCommit, fileName);
 		}
 
 		private static string GetFileContent(string repositoryPath, string commitId, string fileName)
 		{
-			using (var repo = new Repository(repositoryPath))
-			{
-				var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
-				return GetFileContent(gitCommit, fileName);
-			}
+			using var repo = new Repository(repositoryPath);
+			var gitCommit = repo.Lookup<LibGit2Sharp.Commit>(commitId);
+			return GetFileContent(gitCommit, fileName);
 		}
 
 		private static string GetFileContent(LibGit2Sharp.Commit commit, string fileName)
@@ -300,7 +277,7 @@ namespace GitBlame.Models
 
 			// strip BOM (U+FEFF) if present
 			if (content.Length > 0 && content[0] == '\uFEFF')
-				content = content.Substring(1);
+				content = content[1..];
 
 			return content;
 		}
@@ -368,22 +345,17 @@ namespace GitBlame.Models
 		private static Commit CreateCommit(string commitId, Dictionary<string, string> tagValues)
 		{
 			// read standard values (that are assumed to always be present)
-			Person author = new Person(tagValues["author"], GetEmail(tagValues["author-mail"]));
-			DateTimeOffset authorDate = ConvertUnixTime(tagValues["author-time"], tagValues["author-tz"]);
-			Person committer = new Person(tagValues["committer"], GetEmail(tagValues["committer-mail"]));
-			DateTimeOffset commitDate = ConvertUnixTime(tagValues["committer-time"], tagValues["committer-tz"]);
+			var author = new Person(tagValues["author"], GetEmail(tagValues["author-mail"]));
+			var authorDate = ConvertUnixTime(tagValues["author-time"], tagValues["author-tz"]);
+			var committer = new Person(tagValues["committer"], GetEmail(tagValues["committer-mail"]));
+			var commitDate = ConvertUnixTime(tagValues["committer-time"], tagValues["committer-tz"]);
 			string summary = tagValues["summary"];
 
 			// read optional "previous" value
 			string previousCommitId = null;
 			string previousFileName = null;
-			string previous;
-			if (tagValues.TryGetValue("previous", out previous))
-			{
-				var hashFileName = previous.SplitOnSpace();
-				previousCommitId = hashFileName.Item1;
-				previousFileName = hashFileName.Item2;
-			}
+			if (tagValues.TryGetValue("previous", out var previous))
+				(previousCommitId, previousFileName) = previous.SplitOnSpace();
 
 			return new Commit(commitId, author, authorDate, committer, commitDate, summary, previousCommitId, previousFileName);
 		}
@@ -392,22 +364,19 @@ namespace GitBlame.Models
 		private static DateTimeOffset ConvertUnixTime(string seconds, string timeZone)
 		{
 			// parse timestamp to base date time
-			DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified);
-			DateTime dateTime = epoch.AddSeconds(double.Parse(seconds, CultureInfo.InvariantCulture));
+			var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified);
+			var dateTime = epoch.AddSeconds(double.Parse(seconds, CultureInfo.InvariantCulture));
 
 			// parse time zone to hours and minutes
-			int hours = int.Parse(timeZone.Substring(1, 2), CultureInfo.InvariantCulture);
-			int minutes = int.Parse(timeZone.Substring(3, 2), CultureInfo.InvariantCulture);
+			int hours = int.Parse(timeZone[1..3], CultureInfo.InvariantCulture);
+			int minutes = int.Parse(timeZone[3..5], CultureInfo.InvariantCulture);
 			TimeSpan offset = TimeSpan.FromMinutes((hours * 60 + minutes) * (timeZone[0] == '-' ? -1 : 1));
 
 			return new DateTimeOffset(dateTime + offset, offset);
 		}
 
 		// Extracts the email address from a well-formed "author-mail" or "committer-mail" value.
-		private static string GetEmail(string email)
-		{
-			return (email[0] == '<' && email[email.Length - 1] == '>') ? email.Substring(1, email.Length - 2) : email;
-		}
+		private static string GetEmail(string email) => (email[0] == '<' && email[^1] == '>') ? email[1..^1] : email;
 
 		private static string GetGitPath()
 		{
@@ -446,17 +415,15 @@ namespace GitBlame.Models
 				if (Directory.Exists(gitDirectory))
 				{
 					string probeFileName = filePath.Substring(currentDirectory.Length + 1);
-					using (Repository repo = new Repository(gitDirectory))
-					{
-						var entry = repo.Index.FirstOrDefault(x => string.Equals(x.Path, probeFileName, StringComparison.OrdinalIgnoreCase));
-						fileName = entry != null ? entry.Path : probeFileName;
-						return true;
-					}
+					using Repository repo = new Repository(gitDirectory);
+					var entry = repo.Index.FirstOrDefault(x => string.Equals(x.Path, probeFileName, StringComparison.OrdinalIgnoreCase));
+					fileName = entry is object ? entry.Path : probeFileName;
+					return true;
 				}
 
 				currentDirectory = Path.GetDirectoryName(currentDirectory);
 			}
-			while (currentDirectory != null);
+			while (currentDirectory is object);
 
 			Log.WarnFormat("Can't find .git directory for {0}", filePath);
 			gitDirectory = null;

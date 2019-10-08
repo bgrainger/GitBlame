@@ -1,5 +1,4 @@
-﻿
-namespace GitBlame.Models
+﻿namespace GitBlame.Models
 {
 	internal enum LinePartStatus
 	{

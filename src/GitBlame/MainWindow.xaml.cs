@@ -29,7 +29,7 @@ namespace GitBlame
 
 		private void RunBlame(BlamePositionModel position)
 		{
-			if (position == null || position.RepoPath == null)
+			if (position is null || position.RepoPath is null)
 			{
 				Blame.ClearBlameResult();
 			}
@@ -46,7 +46,7 @@ namespace GitBlame
 			var position = m_model.Position;
 			OpenFileDialog dialog = new OpenFileDialog
 			{
-				InitialDirectory = position == null ? null : Path.GetDirectoryName(position.FilePath),
+				InitialDirectory = position is null ? null : Path.GetDirectoryName(position.FilePath),
 			};
 
 			if (dialog.ShowDialog().GetValueOrDefault())
@@ -60,7 +60,7 @@ namespace GitBlame
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
-			if (m_model.Position != null && blamePrevious != null)
+			if (m_model.Position is object && blamePrevious is object)
 			{
 				m_model.NavigateTo(new BlamePositionModel(m_model.Position.RepoPath, blamePrevious.FileName)
 				{
@@ -108,7 +108,7 @@ namespace GitBlame
 				try
 				{
 					var position = m_model.Position;
-					string arguments = position == null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
+					string arguments = position is null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
 					Process.Start(path, arguments);
 					Application.Current.Shutdown(0);
 				}
@@ -131,7 +131,7 @@ namespace GitBlame
 
 		private void OnCanShowGoToLineInput(object sender, CanExecuteRoutedEventArgs e)
 		{
-			e.CanExecute = m_model.Position != null;
+			e.CanExecute = m_model.Position is object;
 		}
 
 		readonly MainWindowModel m_model;

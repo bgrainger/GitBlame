@@ -8,16 +8,17 @@ namespace GitBlame.Utility
 {
 	public sealed class ExternalProcess
 	{
-		public ExternalProcess(string executablePath) : this(executablePath, null)
+		public ExternalProcess(string executablePath)
+			: this(executablePath, null)
 		{
 		}
 
 		public ExternalProcess(string executablePath, string defaultWorkingDirectory)
 		{
-			if (executablePath == null)
-				throw new ArgumentNullException("executablePath");
+			if (executablePath is null)
+				throw new ArgumentNullException(nameof(executablePath));
 			if (!File.Exists(executablePath))
-				throw new FileNotFoundException("Specified executable wasn't found.", "executablePath");
+				throw new FileNotFoundException("Specified executable wasn't found.", executablePath);
 
 			m_executablePath = executablePath;
 			m_defaultWorkingDirectory = defaultWorkingDirectory;
@@ -26,15 +27,14 @@ namespace GitBlame.Utility
 		public ExternalProcessResults Run(ProcessRunSettings settings)
 		{
 			StringBuilder errors = new StringBuilder();
-			using (var process = StartProcess(settings, errors))
-			{
-				// wait for process to end (must read all output first)
-				var output = process.StandardOutput.ReadToEnd();
-				process.WaitForExit();
+			using var process = StartProcess(settings, errors);
+			
+			// wait for process to end (must read all output first)
+			var output = process.StandardOutput.ReadToEnd();
+			process.WaitForExit();
 
-				// return errors and process output
-				return new ExternalProcessResults(output, errors.ToString(), process.ExitCode);
-			}
+			// return errors and process output
+			return new ExternalProcessResults(output, errors.ToString(), process.ExitCode);
 		}
 
 		private Process StartProcess(ProcessRunSettings settings, StringBuilder errorsBuilder)
@@ -71,50 +71,25 @@ namespace GitBlame.Utility
 
 	public class ProcessRunSettings
 	{
-		public ProcessRunSettings(string arguments)
-		{
-			m_arguments = arguments;
-		}
+		public ProcessRunSettings(string arguments) => Arguments = arguments;
 
-		public ProcessRunSettings(params string[] arguments)
-		{
-			m_arguments = string.Join(" ", arguments.Select(arg => arg.Trim()));
-		}
+		public ProcessRunSettings(params string[] arguments) => Arguments = string.Join(" ", arguments.Select(arg => arg.Trim()));
 
-		public string Arguments
-		{
-			get { return m_arguments; }
-		}
-
-		readonly string m_arguments;
+		public string Arguments { get; }
 	}
 
-	public struct ExternalProcessResults
+#pragma warning disable CA1815 // implement Equals
+    public readonly struct ExternalProcessResults
 	{
 		public ExternalProcessResults(string output, string errors, int exitCode)
 		{
-			m_output = output;
-			m_errors = errors;
-			m_exitCode = exitCode;
+			Output = output;
+			Errors = errors;
+			ExitCode = exitCode;
 		}
 
-		public string Output
-		{
-			get { return m_output; }
-		}
-
-		public string Errors
-		{
-			get { return m_errors; }
-		}
-
-		public int ExitCode
-		{
-			get { return m_exitCode; }
-		}
-
-		readonly string m_output;
-		readonly string m_errors;
-		readonly int m_exitCode;
+		public string Output { get; }
+		public string Errors { get; }
+		public int ExitCode { get; }
 	}
 }

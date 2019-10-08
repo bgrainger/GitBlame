@@ -64,21 +64,15 @@ namespace GitBlame
 			mouseOverCommits.Subscribe(MouseOverCommit);
 			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5))
 				.CombineLatest(canShowTooltip, (l, r) => new { Commit = l, CanShowTooltip = r })
-				.Where(x => x.Commit != null && x.CanShowTooltip)
+				.Where(x => x.Commit is object && x.CanShowTooltip)
 				.Select(x => x.Commit)
 				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe(ShowCommitTooltip);
 		}
 
-		public int? TopLineNumber
-		{
-			get { return m_layout == null ? default(int?) : m_layout.TopLineNumber; }
-		}
+		public int? TopLineNumber => m_layout?.TopLineNumber;
 
-		public int? TotalLines
-		{
-			get { return m_layout == null ? default(int?) : m_lineCount; }
-		}
+		public int? TotalLines => m_layout is null ? default : m_lineCount;
 
 		public void GoToLineNumber(int topLineNumber = 1)
 		{
@@ -90,10 +84,9 @@ namespace GitBlame
 
 		internal void SetBlameResult(BlameResult blame, int topLineNumber = 1)
 		{
-			if (m_blameSubscription != null)
-				m_blameSubscription.Dispose();
+			m_blameSubscription?.Dispose();
 
-			double oldLineHeight = m_layout == null ? 1.0 : m_layout.LineHeight;
+			var oldLineHeight = m_layout?.LineHeight ?? 1.0;
 
 			m_blame = blame;
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
@@ -122,7 +115,7 @@ namespace GitBlame
 
 		protected override Size ArrangeOverride(Size finalSize)
 		{
-			if (m_layout != null)
+			if (m_layout is object)
 			{
 				m_layout = m_layout.WithRenderSize(finalSize);
 				SetVerticalScrollInfo(null, finalSize.Height / m_layout.LineHeight, null);
@@ -134,7 +127,7 @@ namespace GitBlame
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
-			if (m_layout != null)
+			if (m_layout is object)
 			{
 				Typeface typeface = TextElementUtility.GetTypeface(this);
 				m_emSize = Math.Max(TextElement.GetFontSize(this), 10.0 * 4 / 3);
@@ -149,7 +142,7 @@ namespace GitBlame
 		protected override Visual GetVisualChild(int index)
 		{
 			if (index != 0)
-				throw new ArgumentOutOfRangeException("index");
+				throw new ArgumentOutOfRangeException(nameof(index));
 
 			return m_visual;
 		}
@@ -163,7 +156,7 @@ namespace GitBlame
 		{
 			HideToolTip();
 
-			string hoverCommitId = hoverCommit == null ? null : hoverCommit.Id;
+			var hoverCommitId = hoverCommit?.Id;
 			if (hoverCommitId == m_selectedCommitId)
 				hoverCommitId = null;
 			SetCommitColor(ref m_hoverCommitId, hoverCommitId, m_changedTextBrush.Color);
@@ -193,9 +186,7 @@ namespace GitBlame
 		protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
 		{
 			Point position = e.GetPosition(this);
-
-			DisplayBlock block = m_layout == null ? null : m_layout.Blocks.FirstOrDefault(x => x.CommitPosition.Contains(position));
-			if (block != null)
+			if (m_layout?.Blocks.FirstOrDefault(x => x.CommitPosition.Contains(position)) is DisplayBlock block)
 			{
 				int lineIndex = (int) (position.Y / m_layout.LineHeight);
 				DisplayLine displayLine = m_layout.Lines[lineIndex];
@@ -203,9 +194,9 @@ namespace GitBlame
 				int previousTopLine = Math.Max(1, line.OldLineNumber - lineIndex);
 
 				Commit commit = block.RawCommit;
-				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId == null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
-				m_viewCommitAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
-				m_viewLineAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl != null && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "blob/{0}/{1}#L{2}".FormatInvariant(commit.Id, block.RawBlock.FileName, line.LineNumber)) : null;
+				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId is null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
+				m_viewCommitAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl is object && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
+				m_viewLineAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl is object && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "blob/{0}/{1}#L{2}".FormatInvariant(commit.Id, block.RawBlock.FileName, line.LineNumber)) : null;
 				ContextMenu.IsOpen = true;
 			}
 			else
@@ -221,81 +212,75 @@ namespace GitBlame
 
 		private void SetCommitColor(ref string commitId, string newCommitId, Color color)
 		{
-			if (commitId != null && m_commitBrush.ContainsKey(commitId))
+			if (commitId is object && m_commitBrush.ContainsKey(commitId))
 				m_commitBrush[commitId].Color = GetCommitColor(commitId);
 
-			if (newCommitId != null && m_commitBrush.ContainsKey(newCommitId))
+			if (newCommitId is object && m_commitBrush.ContainsKey(newCommitId))
 				m_commitBrush[newCommitId].Color = color;
 
 			commitId = newCommitId;
 		}
 
-		private Commit GetCommitFromPoint(Point point)
-		{
-			return m_layout == null ? null : m_layout.Blocks
+		private Commit GetCommitFromPoint(Point point) =>
+			m_layout?.Blocks
 				.Where(b => b.CommitPosition.Contains(point))
 				.Select(b => b.RawCommit)
 				.FirstOrDefault();
-		}
 
-		private string GetCommitIdFromPoint(Point point)
-		{
-			Commit commit = GetCommitFromPoint(point);
-			return commit == null ? null : commit.Id;
-		}
+		private string GetCommitIdFromPoint(Point point) => GetCommitFromPoint(point)?.Id;
 
 		protected override void OnScrollChanged()
 		{
-			m_layout = m_layout == null ? null : m_layout.WithTopLineNumber((int) VerticalOffset + 1);
+			m_layout = m_layout?.WithTopLineNumber((int) VerticalOffset + 1);
 			if (RenderSize.Width > 0 && RenderSize.Height > 0)
 				Render();
 		}
 
 		private void Render()
 		{
-			using (DrawingContext drawingContext = m_visual.RenderOpen())
-				Render(drawingContext);
+			using DrawingContext drawingContext = m_visual.RenderOpen();
+			Render(drawingContext);
 		}
 
 		private void Render(DrawingContext drawingContext)
 		{
 			drawingContext.DrawRectangle(Brushes.White, null, new Rect(new Point(), RenderSize));
-			if (m_blame == null || m_emSize == 0)
+			if (m_blame is null || m_emSize == 0)
 				return;
 
-			Typeface typeface = TextElementUtility.GetTypeface(this);
-			BlameLayout layout = m_layout.WithRenderSize(RenderSize);
+			var typeface = TextElementUtility.GetTypeface(this);
+			var layout = m_layout.WithRenderSize(RenderSize);
 
-			foreach (Rect newLineRectangle in layout.NewLines)
+			foreach (var newLineRectangle in layout.NewLines)
 				drawingContext.DrawRectangle(m_newLineBrush, null, newLineRectangle);
 
-			foreach (DisplayBlock block in layout.Blocks)
+			foreach (var block in layout.Blocks)
 			{
-				Rect blockRectangle = block.CommitPosition;
+				var blockRectangle = block.CommitPosition;
 
 				drawingContext.DrawRectangle(m_personBrush[block.AuthorIndex], null, block.AuthorPosition);
 				drawingContext.DrawRectangle(GetOrCreateCommitBrush(block), null, blockRectangle);
 
 				drawingContext.DrawLine(new Pen(Brushes.LightGray, 1), new Point(0, blockRectangle.Bottom + 0.5), new Point(RenderSize.Width, blockRectangle.Bottom + 0.5));
 
-				FormattedText authorText = CreateSmallFormattedText(block.AuthorName, typeface, block.AuthorWidth);
+				var authorText = CreateSmallFormattedText(block.AuthorName, typeface, block.AuthorWidth);
 				drawingContext.DrawText(authorText, new Point(block.AuthorX, block.TextY));
 
-				FormattedText dateText = CreateSmallFormattedText(block.Date, typeface, block.DateWidth);
+				var dateText = CreateSmallFormattedText(block.Date, typeface, block.DateWidth);
 				dateText.TextAlignment = TextAlignment.Right;
 				drawingContext.DrawText(dateText, new Point(block.DateX, block.TextY));
 
 				if (block.ShowsSummary)
 				{
-					Rect summaryPosition = block.SummaryPosition;
-					FormattedText commitText = CreateSmallFormattedText(block.Summary, typeface, summaryPosition.Width);
+					var summaryPosition = block.SummaryPosition;
+					var commitText = CreateSmallFormattedText(block.Summary, typeface, summaryPosition.Width);
 					commitText.MaxLineCount = commitText.Height == 0 ? 1 : Math.Max(1, (int) (summaryPosition.Height / commitText.Height));
 					commitText.Trimming = TextTrimming.WordEllipsis;
 					drawingContext.DrawText(commitText, summaryPosition.TopLeft);
 				}
 			}
 
-			Column lineNumberColumn = layout.LineNumberColumn;
+			var lineNumberColumn = layout.LineNumberColumn;
 			double yOffset = 0;
 			double lineNumberWidth = lineNumberColumn.Width;
 			foreach (DisplayLine line in layout.Lines)
@@ -311,17 +296,17 @@ namespace GitBlame
 			}
 			layout = layout.WithLineNumberWidth(lineNumberWidth);
 
-			Column codeColumn = layout.CodeColumn;
-			Geometry clipGeometry = new RectangleGeometry(new Rect(codeColumn.Left, 0, RenderSize.Width - codeColumn.Left, RenderSize.Height));
+			var codeColumn = layout.CodeColumn;
+			var clipGeometry = new RectangleGeometry(new Rect(codeColumn.Left, 0, RenderSize.Width - codeColumn.Left, RenderSize.Height));
 			drawingContext.PushClip(clipGeometry);
 
 			yOffset = 0;
-			foreach (DisplayLine line in layout.Lines)
+			foreach (var line in layout.Lines)
 			{
-				double xOffset = layout.CodeColumn.Left - HorizontalOffset;
-				foreach (LinePart part in line.Parts)
+				var xOffset = layout.CodeColumn.Left - HorizontalOffset;
+				foreach (var part in line.Parts)
 				{
-					FormattedText text = CreateFormattedText(string.Join("", part.Text.Replace("\t", "    ")), typeface);
+					var text = CreateFormattedText(string.Join("", part.Text.Replace("\t", "    ")), typeface);
 
 					if (!line.IsNew && part.Status == LinePartStatus.New)
 						drawingContext.DrawRectangle(m_changedTextBrush, null, new Rect(xOffset, yOffset, text.WidthIncludingTrailingWhitespace, layout.LineHeight));
@@ -337,10 +322,10 @@ namespace GitBlame
 
 			drawingContext.Pop();
 
-			double commitRightX = layout.CommitColumn.Right;
+			var commitRightX = layout.CommitColumn.Right;
 			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(commitRightX, 0), new Point(commitRightX, Math.Min(yOffset, RenderSize.Height)));
 
-			double lineNumberRightX = layout.CodeMarginColumn.Right;
+			var lineNumberRightX = layout.CodeMarginColumn.Right;
 			drawingContext.DrawLine(new Pen(Brushes.DarkGray, 1), new Point(lineNumberRightX, 0), new Point(lineNumberRightX, Math.Min(yOffset, RenderSize.Height)));
 
 			SetHorizontalScrollInfo(layout.Width, RenderSize.Width, null);
@@ -354,7 +339,7 @@ namespace GitBlame
 
 		private void OnBlameResultPropertyChanged(PropertyChangedEventArgs e)
 		{
-			bool fullRefresh = e.PropertyName == null;
+			bool fullRefresh = e.PropertyName is null;
 			m_layout = m_layout.Refresh(fullRefresh);
 			if (fullRefresh)
 			{
