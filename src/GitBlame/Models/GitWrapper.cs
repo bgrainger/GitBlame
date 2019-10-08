@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -94,7 +94,7 @@ namespace GitBlame.Models
 
 				// run "git blame"
 				var git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
-				var arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
+				var arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8", "-w" };
 				if (blameCommitId is object)
 					arguments.Add(blameCommitId);
 				arguments.AddRange(new[] { "--", fileName });
