@@ -53,15 +53,9 @@ namespace GitBlame
 				m_model.NavigateTo(new BlamePositionModel(dialog.FileName));
 		}
 
-		void OnBrowseBack(object sender, ExecutedRoutedEventArgs e)
-		{
-			m_model.NavigateBack();
-		}
+		void OnBrowseBack(object sender, ExecutedRoutedEventArgs e) => m_model.NavigateBack();
 
-		void OnBrowseForward(object sender, ExecutedRoutedEventArgs e)
-		{
-			m_model.NavigateForward();
-		}
+		void OnBrowseForward(object sender, ExecutedRoutedEventArgs e) => m_model.NavigateForward();
 
 		private void OnBlamePrevious(object sender, ExecutedRoutedEventArgs e)
 		{
@@ -84,8 +78,7 @@ namespace GitBlame
 
 		private void OnViewAtGitHub(object sender, ExecutedRoutedEventArgs e)
 		{
-			Uri uri = e.Parameter as Uri;
-			if (uri != null)
+			if (e.Parameter is Uri uri)
 			{
 				try
 				{
@@ -110,8 +103,7 @@ namespace GitBlame
 
 		private void OnApplyUpdate(object sender, ExecutedRoutedEventArgs e)
 		{
-			string path = e.Parameter as string;
-			if (path != null)
+			if (e.Parameter is string path)
 			{
 				try
 				{
@@ -133,7 +125,7 @@ namespace GitBlame
 
 		private void OnShowGoToLineInput(object sender, ExecutedRoutedEventArgs e)
 		{
-			GoToLine gotoDialog = new GoToLine {DataContext = Blame};
+			GoToLine gotoDialog = new GoToLine { DataContext = Blame };
 			gotoDialog.ShowDialog();
 		}
 
