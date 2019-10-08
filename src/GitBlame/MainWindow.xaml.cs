@@ -89,7 +89,12 @@ namespace GitBlame
 			{
 				try
 				{
-					Process.Start(uri.AbsoluteUri);
+					ProcessStartInfo psi = new ProcessStartInfo
+					{
+						FileName = uri.AbsoluteUri,
+						UseShellExecute = true,
+					};
+					Process.Start(psi);
 				}
 				catch (Win32Exception)
 				{
