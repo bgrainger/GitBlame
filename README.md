@@ -2,19 +2,13 @@
 
 GitBlame is a streamlined GUI for viewing `git blame` output on Windows.
 
-## Download
-
-Visit the [main site](http://bradleygrainger.com/GitBlame/) to get the latest installer.
-
 ## How to Build
 
-This project requires Visual Studio 2012 (or better). After cloning the
-repository, open `GitBlame\GitBlame.sln` and build it.
+This project requires .NET Core 3.0 (or Visual Studio 2019 or later) on Windows. After
+cloning the repository, open `GitBlame\GitBlame.sln` and build it, or run `dotnet build`.
 
-[msysgit](http://msysgit.github.io/) must be installed for GitBlame
-to function correctly.
+[Git for Windows](https://gitforwindows.org) must be installed for GitBlame to function correctly.
 
 ## License
 
-GitBlame is licensed under GPL v2, just like git itself. See `COPYING` for
-more information.
+GitBlame is licensed under GPL v2, just like git itself. See `COPYING` for more information.
