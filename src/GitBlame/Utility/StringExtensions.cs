@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using JetBrains.Annotations;
 
@@ -12,7 +12,6 @@ namespace GitBlame.Utility
 		/// <param name="format">The format string.</param>
 		/// <param name="args">The format arguments.</param>
 		/// <returns>The formatted string.</returns>
-		[StringFormatMethod("format")]
 		public static string FormatInvariant(this string format, params object[] args)
 		{
 			return string.Format(CultureInfo.InvariantCulture, format, args);
