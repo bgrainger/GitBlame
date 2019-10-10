@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -65,7 +65,7 @@ namespace GitBlame
 			mouseOverCommits.Throttle(TimeSpan.FromSeconds(0.5))
 				.CombineLatest(canShowTooltip, (l, r) => new { Commit = l, CanShowTooltip = r })
 				.Where(x => x.Commit is object && x.CanShowTooltip)
-				.Select(x => x.Commit)
+				.Select(x => x.Commit!)
 				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe(ShowCommitTooltip);
 		}
@@ -152,7 +152,7 @@ namespace GitBlame
 			get { return 1; }
 		}
 
-		private void MouseOverCommit(Commit hoverCommit)
+		private void MouseOverCommit(Commit? hoverCommit)
 		{
 			HideToolTip();
 
@@ -190,11 +190,11 @@ namespace GitBlame
 			{
 				int lineIndex = (int) (position.Y / m_layout.LineHeight);
 				DisplayLine displayLine = m_layout.Lines[lineIndex];
-				Line line = m_blame.Lines[displayLine.LineNumber - 1];
+				Line line = m_blame!.Lines[displayLine.LineNumber - 1];
 				int previousTopLine = Math.Max(1, line.OldLineNumber - lineIndex);
 
 				Commit commit = block.RawCommit;
-				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId is null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName, previousTopLine);
+				m_blamePreviousMenuItem.CommandParameter = commit.PreviousCommitId is null ? null : new BlamePreviousModel(commit.PreviousCommitId, commit.PreviousFileName!, previousTopLine);
 				m_viewCommitAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl is object && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "commit/" + commit.Id) : null;
 				m_viewLineAtGitHubMenuItem.CommandParameter = m_blame.WebRootUrl is object && commit.Id != GitWrapper.UncommittedChangesCommitId ? new Uri(m_blame.WebRootUrl, "blob/{0}/{1}#L{2}".FormatInvariant(commit.Id, block.RawBlock.FileName, line.LineNumber)) : null;
 				ContextMenu.IsOpen = true;
@@ -210,7 +210,7 @@ namespace GitBlame
 			base.OnMouseRightButtonUp(e);
 		}
 
-		private void SetCommitColor(ref string commitId, string newCommitId, Color color)
+		private void SetCommitColor(ref string? commitId, string? newCommitId, Color color)
 		{
 			if (commitId is object && m_commitBrush.ContainsKey(commitId))
 				m_commitBrush[commitId].Color = GetCommitColor(commitId);
@@ -221,13 +221,13 @@ namespace GitBlame
 			commitId = newCommitId;
 		}
 
-		private Commit GetCommitFromPoint(Point point) =>
+		private Commit? GetCommitFromPoint(Point point) =>
 			m_layout?.Blocks
 				.Where(b => b.CommitPosition.Contains(point))
 				.Select(b => b.RawCommit)
 				.FirstOrDefault();
 
-		private string GetCommitIdFromPoint(Point point) => GetCommitFromPoint(point)?.Id;
+		private string? GetCommitIdFromPoint(Point point) => GetCommitFromPoint(point)?.Id;
 
 		protected override void OnScrollChanged()
 		{
@@ -249,7 +249,7 @@ namespace GitBlame
 				return;
 
 			var typeface = TextElementUtility.GetTypeface(this);
-			var layout = m_layout.WithRenderSize(RenderSize);
+			var layout = m_layout!.WithRenderSize(RenderSize);
 
 			foreach (var newLineRectangle in layout.NewLines)
 				drawingContext.DrawRectangle(m_newLineBrush, null, newLineRectangle);
@@ -340,7 +340,7 @@ namespace GitBlame
 		private void OnBlameResultPropertyChanged(PropertyChangedEventArgs e)
 		{
 			bool fullRefresh = e.PropertyName is null;
-			m_layout = m_layout.Refresh(fullRefresh);
+			m_layout = m_layout!.Refresh(fullRefresh);
 			if (fullRefresh)
 			{
 				m_personBrush.Clear();
@@ -354,7 +354,7 @@ namespace GitBlame
 			m_redrawTimer.Start();
 		}
 
-		private void OnRedrawTimerTick(object sender, EventArgs args)
+		private void OnRedrawTimerTick(object? sender, EventArgs args)
 		{
 			m_redrawTimer.Stop();
 			Render();
@@ -378,8 +378,7 @@ namespace GitBlame
 
 		private SolidColorBrush GetOrCreateCommitBrush(DisplayBlock block)
 		{
-			SolidColorBrush brush;
-			if (!m_commitBrush.TryGetValue(block.CommitId, out brush))
+			if (!m_commitBrush.TryGetValue(block.CommitId, out var brush))
 			{
 				m_commitAlpha.Add(block.CommitId, unchecked((byte) (block.Alpha * 255)));
 				brush = new SolidColorBrush(GetCommitColor(block.CommitId));
@@ -510,13 +509,13 @@ namespace GitBlame
 		readonly Dictionary<string, SolidColorBrush> m_commitBrush;
 		readonly Dictionary<string, byte> m_commitAlpha;
 		readonly DispatcherTimer m_redrawTimer;
-		BlameResult m_blame;
-		IDisposable m_blameSubscription;
-		BlameLayout m_layout;
+		BlameResult? m_blame;
+		IDisposable? m_blameSubscription;
+		BlameLayout? m_layout;
 		int m_lineCount;
 		double m_emSize;
-		string m_hoverCommitId;
-		string m_selectedCommitId;
-		ToolTip m_hoverTip;
+		string? m_hoverCommitId;
+		string? m_selectedCommitId;
+		ToolTip? m_hoverTip;
 	}
 }

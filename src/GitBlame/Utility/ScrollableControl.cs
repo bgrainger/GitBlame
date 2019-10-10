@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -59,7 +59,7 @@ namespace GitBlame.Utility
 		/// <see cref="IScrollInfo.ExtentHeight"/> minus the <see cref="IScrollInfo.ViewportHeight"/>. This property has no default value.</returns>
 		public double VerticalOffset => m_verticalOffset;
 
-		ScrollViewer IScrollInfo.ScrollOwner { get; set; }
+		ScrollViewer? IScrollInfo.ScrollOwner { get; set; }
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ScrollableControl"/> class.

@@ -1,4 +1,5 @@
-﻿#pragma warning disable CA1051
+#nullable disable
+#pragma warning disable CA1051
 #pragma warning disable CA1055
 #pragma warning disable CA1062
 #pragma warning disable CA1707

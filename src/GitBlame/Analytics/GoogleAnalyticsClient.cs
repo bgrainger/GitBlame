@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Net.Http;
 using System.Reflection;
@@ -22,7 +22,7 @@ namespace GitBlame.Analytics
 			m_trackingId = trackingId;
 			m_appName = appName;
 			m_provider = provider;
-			m_appVersion = Assembly.GetCallingAssembly().GetName().Version.ToString();
+			m_appVersion = Assembly.GetCallingAssembly().GetName().Version!.ToString();
 			m_clientId = LoadOrCreateClientId();
 			m_httpClient = new HttpClient();
 

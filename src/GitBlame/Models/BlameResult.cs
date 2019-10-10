@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,7 +12,7 @@ namespace GitBlame.Models
 	/// </summary>
 	internal sealed class BlameResult : INotifyPropertyChanged
 	{
-		public BlameResult(Uri webRootUrl, IReadOnlyList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
+		public BlameResult(Uri? webRootUrl, IReadOnlyList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
 		{
 			WebRootUrl = webRootUrl;
 			Blocks = blocks;
@@ -22,11 +22,11 @@ namespace GitBlame.Models
 			m_commitsReadOnly = m_commits.Values.ToList().AsReadOnly();
 		}
 
-		public Uri WebRootUrl { get; }
+		public Uri? WebRootUrl { get; }
 		public IReadOnlyList<Block> Blocks { get; private set; }
 		public IReadOnlyList<Commit> Commits => m_commitsReadOnly;
 		public IReadOnlyList<Line> Lines => m_linesReadOnly;
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 
 		internal void SetData(IList<Block> blocks, IList<Line> lines, Dictionary<string, Commit> commits)
 		{
@@ -50,7 +50,7 @@ namespace GitBlame.Models
 			RaisePropertyChanged(nameof(Lines));
 		}
 
-		private void RaisePropertyChanged(string propertyName) =>
+		private void RaisePropertyChanged(string? propertyName) =>
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
 		IList<Line> m_lines;

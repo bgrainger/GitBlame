@@ -1,4 +1,4 @@
-﻿// #define DEVELOPMENT
+// #define DEVELOPMENT
 
 using System;
 using System.Globalization;
@@ -61,9 +61,9 @@ namespace GitBlame
 				Log.InfoFormat("Command-line arg: {0}", arg);
 
 			MainWindowModel mainWindowModel = m_app.MainWindow;
-			BlamePositionModel position = null;
+			BlamePositionModel? position = null;
 
-			string filePath = e.Args.Length >= 1 ? e.Args[0] : null;
+			string? filePath = e.Args.Length >= 1 ? e.Args[0] : null;
 			if (filePath == "/restart" && e.Args.Length == 5)
 			{
 				position = new BlamePositionModel(e.Args[1], e.Args[2])

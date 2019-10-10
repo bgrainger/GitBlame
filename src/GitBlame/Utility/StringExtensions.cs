@@ -12,7 +12,7 @@ namespace GitBlame.Utility
 		/// <param name="format">The format string.</param>
 		/// <param name="args">The format arguments.</param>
 		/// <returns>The formatted string.</returns>
-		public static string FormatInvariant(this string format, params object[] args)
+		public static string FormatInvariant(this string format, params object?[] args)
 		{
 			return string.Format(CultureInfo.InvariantCulture, format, args);
 		}
@@ -35,7 +35,7 @@ namespace GitBlame.Utility
 			}
 			else
 			{
-				return (value, default);
+				throw new InvalidOperationException("Expected a space in " + value);
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace GitBlame.Utility
 		/// <param name="value">The string to truncate.</param>
 		/// <param name="maxLength">The maximum length.</param>
 		/// <returns>The truncated string.</returns>
-		public static string Truncate(this string value, int maxLength) =>
+		public static string? Truncate(this string? value, int maxLength) =>
 			value is null || value.Length <= maxLength ? value : value[..maxLength];
 
 		/// <summary>

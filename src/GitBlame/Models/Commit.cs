@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace GitBlame.Models
 {
@@ -8,7 +8,7 @@ namespace GitBlame.Models
 	internal sealed class Commit
 	{
 		public Commit(string id, Person author, DateTimeOffset authorDate, Person committer, DateTimeOffset commitDate,
-			string summary, string previousCommitId, string previousFileName)
+			string summary, string? previousCommitId, string? previousFileName)
 		{
 			Id = id;
 			Author = author;
@@ -27,8 +27,8 @@ namespace GitBlame.Models
 		public Person Committer { get; }
 		public DateTimeOffset CommitDate { get; }
 		public string Summary { get; }
-		public string PreviousCommitId { get; }
-		public string PreviousFileName { get; }
-		public string Message { get; set; }
+		public string? PreviousCommitId { get; }
+		public string? PreviousFileName { get; }
+		public string? Message { get; set; }
 	}
 }

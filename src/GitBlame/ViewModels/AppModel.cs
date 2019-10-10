@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security;
 using Common.Logging;
 using Microsoft.Win32;
@@ -10,7 +10,7 @@ namespace GitBlame.ViewModels
 	{
 		public AppModel()
 		{
-			MainWindow = new MainWindowModel();
+			m_mainWindowModel = new MainWindowModel();
 		}
 
 		public MainWindowModel MainWindow
@@ -19,7 +19,7 @@ namespace GitBlame.ViewModels
 			private set => this.RaiseAndSetIfChanged(ref m_mainWindowModel, value);
 		}
 
-		public static string GetRegistrySetting(string name)
+		public static string? GetRegistrySetting(string name)
 		{
 			try
 			{

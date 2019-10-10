@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -74,7 +74,7 @@ namespace GitBlame.Analytics
 			get
 			{
 				// try to get IE version from the exe first.
-				Version ieVersion = null;
+				Version? ieVersion = null;
 				try
 				{
 					using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\App Paths\IEXPLORE.EXE");
@@ -125,7 +125,7 @@ namespace GitBlame.Analytics
 			}
 		}
 
-		public string ApplicationVersion => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+		public string ApplicationVersion => Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
 		[DllImport("Kernel32.dll", ExactSpelling = true)]
 		static extern IntPtr GetCurrentProcess();

@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -62,6 +62,7 @@ namespace GitBlame.Utility
 		/// <param name="pairs">The key value pairs.</param>
 		/// <returns>The dictionary.</returns>
 		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> pairs)
+			where TKey : struct
 		{
 			var dict = new Dictionary<TKey, TValue>();
 			foreach (var pair in pairs ?? throw new ArgumentNullException(nameof(pairs)))

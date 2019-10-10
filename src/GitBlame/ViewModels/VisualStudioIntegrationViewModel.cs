@@ -1,17 +1,19 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using ReactiveUI;
 
 namespace GitBlame.ViewModels
 {
 	public sealed class VisualStudioIntegrationViewModel : ReactiveObject
 	{
-		public string Version
+		public VisualStudioIntegrationViewModel(string version, VisualStudioIntegrationStatus integrationStatus)
 		{
-			get => m_version;
-			set => this.RaiseAndSetIfChanged(ref m_version, value);
+			Version = version;
+			IntegrationStatus = integrationStatus;
 		}
 
-		public string Title => "Visual Studio " + s_title[m_version];
+		public string Version { get; }
+
+		public string Title => "Visual Studio " + s_title[Version];
 
 		public bool IsChecked
 		{
@@ -39,9 +41,8 @@ namespace GitBlame.ViewModels
 				{ "12", "2013" }
 			};
 
-		string m_version;
 		bool m_isChecked;
-		VisualStudioIntegrationStatus m_integrationStatus;
 		int? m_toolIndex;
+		VisualStudioIntegrationStatus m_integrationStatus;
 	}
 }

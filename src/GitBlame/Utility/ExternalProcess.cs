@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace GitBlame.Utility
 		{
 		}
 
-		public ExternalProcess(string executablePath, string defaultWorkingDirectory)
+		public ExternalProcess(string executablePath, string? defaultWorkingDirectory)
 		{
 			if (executablePath is null)
 				throw new ArgumentNullException(nameof(executablePath));
@@ -66,7 +66,7 @@ namespace GitBlame.Utility
 		}
 
 		readonly string m_executablePath;
-		readonly string m_defaultWorkingDirectory;
+		readonly string? m_defaultWorkingDirectory;
 	}
 
 	public class ProcessRunSettings

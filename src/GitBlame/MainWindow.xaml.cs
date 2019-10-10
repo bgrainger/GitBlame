@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -27,7 +27,7 @@ namespace GitBlame
 			model.WhenAny(x => x.Position, x => x.Value).Subscribe(RunBlame);
 		}
 
-		private void RunBlame(BlamePositionModel position)
+		private void RunBlame(BlamePositionModel? position)
 		{
 			if (position is null || position.RepoPath is null)
 			{
@@ -36,7 +36,7 @@ namespace GitBlame
 			else
 			{
 				ProfileOptimization.StartProfile("Blame");
-				BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName, position.CommitId);
+				BlameResult blame = GitWrapper.GetBlameOutput(position.RepoPath, position.FileName!, position.CommitId);
 				Blame.SetBlameResult(blame, position.LineNumber ?? 1);
 			}
 		}
@@ -62,7 +62,7 @@ namespace GitBlame
 			BlamePreviousModel blamePrevious = (BlamePreviousModel) e.Parameter;
 			if (m_model.Position is object && blamePrevious is object)
 			{
-				m_model.NavigateTo(new BlamePositionModel(m_model.Position.RepoPath, blamePrevious.FileName)
+				m_model.NavigateTo(new BlamePositionModel(m_model.Position.RepoPath!, blamePrevious.FileName)
 				{
 					CommitId = blamePrevious.CommitId,
 					LineNumber = blamePrevious.LineNumber,
@@ -108,7 +108,7 @@ namespace GitBlame
 				try
 				{
 					var position = m_model.Position;
-					string arguments = position is null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
+					var arguments = position is null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
 					Process.Start(path, arguments);
 					Application.Current.Shutdown(0);
 				}

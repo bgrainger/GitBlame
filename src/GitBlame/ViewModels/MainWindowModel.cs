@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
 using Common.Logging;
@@ -17,14 +17,14 @@ namespace GitBlame.ViewModels
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value)
 				.Select(x => x is null ? new OpenFileNotification() : x.RepoPath is null ? new OpenFileNotification(x.FilePath) : null);
-			var notifications = openFileNotifications.Cast<NotificationBase>().StartWith(default(NotificationBase)).CombineLatest(
-					VisualStudioIntegration.Check().Cast<NotificationBase>().StartWith(default(NotificationBase)),
+			var notifications = openFileNotifications.Cast<NotificationBase?>().StartWith(default(NotificationBase)).CombineLatest(
+					VisualStudioIntegration.Check().Cast<NotificationBase?>().StartWith(default(NotificationBase)),
 					(of, vs) => of ?? vs)
 				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
 		}
 
-		public BlamePositionModel Position
+		public BlamePositionModel? Position
 		{
 			get => m_position;
 			private set
@@ -38,7 +38,7 @@ namespace GitBlame.ViewModels
 			}
 		}
 
-		public void NavigateTo(BlamePositionModel position)
+		public void NavigateTo(BlamePositionModel? position)
 		{
 			Log.DebugFormat("NavigateTo({0})", position is null ? "null" : "position");
 
@@ -53,7 +53,7 @@ namespace GitBlame.ViewModels
 			if (m_positionHistory.Count != 0)
 			{
 				Log.Debug("NavigateBack");
-				m_positionFuture.Push(Position);
+				m_positionFuture.Push(Position!);
 				Position = m_positionHistory.Pop();
 			}
 		}
@@ -63,12 +63,12 @@ namespace GitBlame.ViewModels
 			if (m_positionFuture.Count != 0)
 			{
 				Log.Debug("NavigateForward");
-				m_positionHistory.Push(Position);
+				m_positionHistory.Push(Position!);
 				Position = m_positionFuture.Pop();
 			}
 		}
 
-		public NotificationBase Notification => m_notification.Value;
+		public NotificationBase? Notification => m_notification.Value;
 
 		public string WindowTitle => m_windowTitle.Value;
 
@@ -76,8 +76,8 @@ namespace GitBlame.ViewModels
 
 		readonly Stack<BlamePositionModel> m_positionHistory;
 		readonly Stack<BlamePositionModel> m_positionFuture;
-		readonly ObservableAsPropertyHelper<NotificationBase> m_notification;
+		readonly ObservableAsPropertyHelper<NotificationBase?> m_notification;
 		readonly ObservableAsPropertyHelper<string> m_windowTitle;
-		BlamePositionModel m_position;
+		BlamePositionModel? m_position;
 	}
 }

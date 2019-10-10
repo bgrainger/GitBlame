@@ -1,4 +1,4 @@
-﻿namespace GitBlame.ViewModels
+namespace GitBlame.ViewModels
 {
 	public class OpenFileNotification : NotificationBase
 	{
@@ -6,8 +6,8 @@
 		{
 		}
 
-		public OpenFileNotification(string filePath) => FilePath = filePath;
+		public OpenFileNotification(string? filePath) => FilePath = filePath;
 
-		public string FilePath { get; }
+		public string? FilePath { get; }
 	}
 }

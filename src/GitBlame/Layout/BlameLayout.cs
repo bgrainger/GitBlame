@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -21,18 +21,11 @@ namespace GitBlame.Layout
 	internal sealed class BlameLayout
 	{
 		public BlameLayout(BlameResult blame)
-			: this()
+			: this(blame, GetBlameAuthors(blame), s_defaultColumnWidths)
 		{
-			// get basic information from "blame" output
-			m_blame = blame;
-			m_authorIndex = GetBlameAuthors(m_blame);
-
 			// track commit age (for fading out the blocks for each commit)
 			m_oldestCommit = GetOldestCommit(m_blame);
 			m_dateScale = GetDateScale(m_blame, m_oldestCommit);
-
-			// set up default column widths
-			m_columnWidths = new double[] { 210, 10, 0, 10, 5, 0 };
 
 			// set default values
 			LineHeight = 1;
@@ -94,8 +87,11 @@ namespace GitBlame.Layout
 		public BlameLayout WithTopLineNumber(int topLineNumber) =>
 			topLineNumber == TopLineNumber ? this : new BlameLayout(this, topLineNumber: topLineNumber);
 
-		private BlameLayout()
+		private BlameLayout(BlameResult blame, Dictionary<Person, int> authorIndex, double[] columnWidths)
 		{
+			m_blame = blame;
+			m_authorIndex = authorIndex;
+			m_columnWidths = columnWidths;
 			m_blocks = new List<DisplayBlock>();
 			m_blocksReadOnly = m_blocks.AsReadOnly();
 			m_lines = new List<DisplayLine>();
@@ -106,19 +102,14 @@ namespace GitBlame.Layout
 
 		private BlameLayout(BlameLayout layout, int? topLineNumber = null, Size? renderSize = null, double? lineHeight = null,
 			double? lineNumberColumnWidth = null, double? codeColumnWidth = null, bool fullRefresh = false)
-			: this()
+			: this(layout.m_blame, fullRefresh ? GetBlameAuthors(layout.m_blame) : layout.m_authorIndex, layout.m_columnWidths)
 		{
-			// copy values from other BlameLayout
-			m_blame = layout.m_blame;
-			m_columnWidths = layout.m_columnWidths;
-
 			// copy or replace values from other BlameLayout
 			TopLineNumber = topLineNumber ?? layout.TopLineNumber;
 			m_renderSize = renderSize ?? layout.m_renderSize;
 			LineHeight = lineHeight ?? layout.LineHeight;
 			m_columnWidths[c_lineNumberColumnIndex] = lineNumberColumnWidth ?? m_columnWidths[c_lineNumberColumnIndex];
 			m_columnWidths[c_codeColumnIndex] = codeColumnWidth ?? m_columnWidths[c_codeColumnIndex];
-			m_authorIndex = fullRefresh ? GetBlameAuthors(m_blame) : layout.m_authorIndex;
 			m_oldestCommit = fullRefresh ? GetOldestCommit(m_blame) : layout.m_oldestCommit;
 			m_dateScale = fullRefresh ? GetDateScale(m_blame, m_oldestCommit) : layout.m_dateScale;
 
@@ -212,6 +203,9 @@ namespace GitBlame.Layout
 		const int c_lineNumberColumnIndex = 2;
 		const int c_codeMarginColumnIndex = 3;
 		const int c_codeColumnIndex = 5;
+
+		// set up default column widths
+		static readonly double[] s_defaultColumnWidths = new double[] { 210, 10, 0, 10, 5, 0 };
 
 		readonly BlameResult m_blame;
 		readonly Dictionary<Person, int> m_authorIndex;

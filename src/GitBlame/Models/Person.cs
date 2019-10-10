@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace GitBlame.Models
@@ -18,7 +18,7 @@ namespace GitBlame.Models
 		public string Name { get; }
 		public string Email { get; }
 		public bool Equals(Person other) => Name == other.Name && Email == other.Email;
-		public override bool Equals(object obj) => obj is Person && Equals((Person)obj);
+		public override bool Equals(object? obj) => obj is Person && Equals((Person)obj);
 		public override int GetHashCode() => unchecked(Name.GetHashCode(StringComparison.Ordinal) * 37 + Email.GetHashCode(StringComparison.Ordinal));
 		public static bool operator ==(Person left, Person right) => left.Equals(right);
 		public static bool operator !=(Person left, Person right) => !left.Equals(right);

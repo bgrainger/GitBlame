@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,13 +19,13 @@ namespace GitBlame.Models
 	{
 		public const string UncommittedChangesCommitId = "0000000000000000000000000000000000000000";
 
-		public static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId)
+		public static BlameResult GetBlameOutput(string repositoryPath, string fileName, string? blameCommitId)
 		{
 			string[] fileLines;
 
 			if (blameCommitId is null)
 			{
-				fileLines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(repositoryPath), fileName));
+				fileLines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(repositoryPath)!, fileName));
 				if (fileLines.Length > 0 && !string.IsNullOrEmpty(fileLines[0]) && fileLines[0][0] == '\uFEFF')
 					fileLines[0] = fileLines[0][1..];
 			}
@@ -40,13 +41,13 @@ namespace GitBlame.Models
 			return GetBlameOutput(repositoryPath, fileName, blameCommitId, fileLines);
 		}
 
-		private static BlameResult GetBlameOutput(string repositoryPath, string fileName, string blameCommitId, string[] currentLines)
+		private static BlameResult GetBlameOutput(string repositoryPath, string fileName, string? blameCommitId, string[] currentLines)
 		{
 			BlameResult blameResult;
 			using (var repo = new Repository(repositoryPath))
 			{
 				// try to determine if the remote URL is plausibly a github.com or GitHub Enterprise URL
-				Uri webRootUrl = repo.Network.Remotes
+				Uri? webRootUrl = repo.Network.Remotes
 					.OrderBy(x => x.Name == "origin" ? 0 : 1)
 					.ThenBy(x => x.Name)
 					.Select(x =>
@@ -93,8 +94,8 @@ namespace GitBlame.Models
 #endif
 
 				// run "git blame"
-				var git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath));
-				var arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8", "-w" };
+				var git = new ExternalProcess(GetGitPath(), Path.GetDirectoryName(repositoryPath)!);
+				var arguments = new List<string> { "blame", "--incremental", "--encoding=utf-8" };
 				if (blameCommitId is object)
 					arguments.Add(blameCommitId);
 				arguments.AddRange(new[] { "--", fileName });
@@ -125,8 +126,8 @@ namespace GitBlame.Models
 					// check if this commit modifies a previous one
 					var group = groupLoopVariable;
 					Commit commit = group.Key;
-					string commitId = commit.Id;
-					string previousCommitId = commit.PreviousCommitId;
+					var commitId = commit.Id;
+					var previousCommitId = commit.PreviousCommitId;
 
 					if (previousCommitId is object)
 					{
@@ -208,7 +209,7 @@ namespace GitBlame.Models
 				var tagValues = new Dictionary<string, string>();
 				do
 				{
-					line = reader.ReadLine();
+					line = reader.ReadLine()!;
 					var tagValue = line.SplitOnSpace();
 					tagValues.Add(tagValue.Before, tagValue.After);
 				} while (!tagValues.ContainsKey("filename"));
@@ -235,14 +236,14 @@ namespace GitBlame.Models
 			var getFileContentTasks = blocks
 				.SelectMany(b => new[]
 				{
-					new { CommitId = b.Commit.Id, b.FileName },
+					new { CommitId = (string?) b.Commit.Id, FileName = (string?) b.FileName },
 					new { CommitId = b.Commit.PreviousCommitId, FileName = b.Commit.PreviousFileName }
 				})
 				.Distinct()
 				.Where(c => c.CommitId is object && c.CommitId != UncommittedChangesCommitId)
 				.ToDictionary(
-					c => c.CommitId,
-					c => Task.FromResult(GetFileContent(repo, commits, c.CommitId, c.FileName)));
+					c => c.CommitId!,
+					c => Task.FromResult(GetFileContent(repo, commits, c.CommitId!, c.FileName!)));
 
 			// add a task that returns the current version of the file
 			getFileContentTasks.Add(UncommittedChangesCommitId, Task.Run(() => string.Join("\n", currentLines)));
@@ -352,8 +353,8 @@ namespace GitBlame.Models
 			string summary = tagValues["summary"];
 
 			// read optional "previous" value
-			string previousCommitId = null;
-			string previousFileName = null;
+			string? previousCommitId = null;
+			string? previousFileName = null;
 			if (tagValues.TryGetValue("previous", out var previous))
 				(previousCommitId, previousFileName) = previous.SplitOnSpace();
 
@@ -406,7 +407,7 @@ namespace GitBlame.Models
 			return lineCount;
 		}
 
-		public static bool SplitRepositoryPath(string filePath, out string gitDirectory, out string fileName)
+		public static bool SplitRepositoryPath(string filePath, [NotNullWhen(true)] out string? gitDirectory, [NotNullWhen(true)] out string? fileName)
 		{
 			string currentDirectory = filePath;
 			do
@@ -421,7 +422,7 @@ namespace GitBlame.Models
 					return true;
 				}
 
-				currentDirectory = Path.GetDirectoryName(currentDirectory);
+				currentDirectory = Path.GetDirectoryName(currentDirectory)!;
 			}
 			while (currentDirectory is object);
 

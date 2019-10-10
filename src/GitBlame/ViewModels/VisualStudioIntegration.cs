@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
@@ -14,9 +14,9 @@ namespace GitBlame.ViewModels
 {
 	public static class VisualStudioIntegration
 	{
-		public static IObservable<VisualStudioNotification> Check()
+		public static IObservable<VisualStudioNotification?> Check()
 		{
-			return Observable.Create<VisualStudioNotification>(obs =>
+			return Observable.Create<VisualStudioNotification?>(obs =>
 			{
 				var exePath = Assembly.GetExecutingAssembly().Location;
 
@@ -68,7 +68,7 @@ namespace GitBlame.ViewModels
 			IntegrateWithVisualStudio(newCommandPath, GetPossibleIntegrationStatus(exePath).Where(x => current.GetValueOrDefault(x.Version) == VisualStudioIntegrationStatus.Installed));
 		}
 
-		private static void IntegrateWithVisualStudio(IObserver<VisualStudioNotification> observer, string commandPath, VisualStudioNotification model, bool integrate)
+		private static void IntegrateWithVisualStudio(IObserver<VisualStudioNotification?> observer, string? commandPath, VisualStudioNotification model, bool integrate)
 		{
 			string preference = string.Join(";", model.Versions.Select(x => GetEffectivePreference(integrate, x)));
 			AppModel.SetRegistrySetting("VisualStudioIntegration", preference);
@@ -77,7 +77,7 @@ namespace GitBlame.ViewModels
 			{
 				Log.InfoFormat("Integrating with {0}", string.Join(", ", model.Versions.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
 				// TODO: Delete tools where !x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Installed
-				IntegrateWithVisualStudio(commandPath, model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available));
+				IntegrateWithVisualStudio(commandPath!, model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available));
 			}
 
 			Log.Info("Completing observer");
@@ -141,11 +141,7 @@ namespace GitBlame.ViewModels
 						using var externalTools = visualStudio.OpenSubKey(subKeyName + @".0\External Tools");
 						if (externalTools is object)
 						{
-							VisualStudioIntegrationViewModel model = new VisualStudioIntegrationViewModel
-							{
-								Version = subKeyName,
-								IntegrationStatus = VisualStudioIntegrationStatus.Available
-							};
+							VisualStudioIntegrationViewModel model = new VisualStudioIntegrationViewModel(subKeyName, VisualStudioIntegrationStatus.Available);
 							for (int tool = 0; tool < (int) externalTools.GetValue("ToolNumKeys"); tool++)
 							{
 								if (commandPath.Equals(externalTools.GetValue("ToolCmd" + tool)))
