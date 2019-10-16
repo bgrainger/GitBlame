@@ -17,9 +17,7 @@ namespace GitBlame.ViewModels
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value)
 				.Select(x => x is null ? new OpenFileNotification() : x.RepoPath is null ? new OpenFileNotification(x.FilePath) : null);
-			var notifications = openFileNotifications.Cast<NotificationBase?>().StartWith(default(NotificationBase)).CombineLatest(
-					VisualStudioIntegration.Check().Cast<NotificationBase?>().StartWith(default(NotificationBase)),
-					(of, vs) => of ?? vs)
+			var notifications = openFileNotifications.Cast<NotificationBase?>().StartWith(default(NotificationBase))
 				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
 		}
