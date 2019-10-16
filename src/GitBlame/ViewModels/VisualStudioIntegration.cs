@@ -6,9 +6,9 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Security;
-using Common.Logging;
 using GitBlame.Utility;
 using Microsoft.Win32;
+using NLog;
 
 namespace GitBlame.ViewModels
 {
@@ -21,9 +21,9 @@ namespace GitBlame.ViewModels
 				var exePath = Assembly.GetExecutingAssembly().Location;
 
 				var currentIntegrationStatus = GetCurrentIntegrationStatus();
-				Log.InfoFormat("Current integrations = {0}", string.Join(", ", currentIntegrationStatus.Select(x => "({0}, {1})".FormatInvariant(x.Key, x.Value))));
+				Log.Info("Current integrations = {0}", string.Join(", ", currentIntegrationStatus.Select(x => "({0}, {1})".FormatInvariant(x.Key, x.Value))));
 				var possibleIntegrations = GetPossibleIntegrationStatus(exePath);
-				Log.InfoFormat("Possible integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1})".FormatInvariant(x.Version, x.IntegrationStatus))));
+				Log.Info("Possible integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1})".FormatInvariant(x.Version, x.IntegrationStatus))));
 
 				// remember versions the user has already declined to integrate with
 				foreach (var model in possibleIntegrations)
@@ -37,7 +37,7 @@ namespace GitBlame.ViewModels
 
 					if (model.IntegrationStatus != VisualStudioIntegrationStatus.NotInstalled)
 					{
-						Log.InfoFormat("Setting IsChecked ({0}) true by default", model.Version);
+						Log.Info("Setting IsChecked ({0}) true by default", model.Version);
 						model.IsChecked = true;
 					}
 				}
@@ -45,7 +45,7 @@ namespace GitBlame.ViewModels
 				// show notification if there are any available versions to integrate with
 				if (possibleIntegrations.Any(x => x.IntegrationStatus == VisualStudioIntegrationStatus.Available))
 				{
-					Log.InfoFormat("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
+					Log.Info("Notifying integrations = {0}", string.Join(", ", possibleIntegrations.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
 					var visualStudioNotification = new VisualStudioNotification(possibleIntegrations,
 						x => IntegrateWithVisualStudio(obs, exePath, x, true),
 						x => IntegrateWithVisualStudio(obs, null, x, false));
@@ -75,7 +75,7 @@ namespace GitBlame.ViewModels
 
 			if (integrate)
 			{
-				Log.InfoFormat("Integrating with {0}", string.Join(", ", model.Versions.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
+				Log.Info("Integrating with {0}", string.Join(", ", model.Versions.Select(x => "({0}, {1}, {2})".FormatInvariant(x.Version, x.IntegrationStatus, x.IsChecked))));
 				// TODO: Delete tools where !x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Installed
 				IntegrateWithVisualStudio(commandPath!, model.Versions.Where(x => x.IsChecked && x.IntegrationStatus == VisualStudioIntegrationStatus.Available));
 			}
@@ -97,7 +97,7 @@ namespace GitBlame.ViewModels
 					{
 						int toolCount = (int) key.GetValue("ToolNumKeys");
 						int tool = model.ToolIndex ?? toolCount;
-						Log.InfoFormat("Creating External Tool #{0} for Visual Studio {1}", tool, version);
+						Log.Info("Creating External Tool #{0} for Visual Studio {1}", tool, version);
 						key.SetValue("ToolArg{0}".FormatInvariant(tool), "$(ItemPath) $(CurLine)");
 						key.SetValue("ToolCmd{0}".FormatInvariant(tool), commandPath);
 						key.SetValue("ToolDir{0}".FormatInvariant(tool), "$(ItemDir)");
@@ -110,11 +110,11 @@ namespace GitBlame.ViewModels
 				}
 				catch (SecurityException ex)
 				{
-					Log.ErrorFormat("SecurityException integrating with {0}", ex, version);
+					Log.Error(ex, "SecurityException integrating with {0}", version);
 				}
 				catch (UnauthorizedAccessException ex)
 				{
-					Log.ErrorFormat("SecurityException integrating with {0}", ex, version);
+					Log.Error(ex, "UnauthorizedAccessException integrating with {0}", version);
 				}
 			}
 		}
@@ -180,7 +180,7 @@ namespace GitBlame.ViewModels
 			return integrationStatus;
 		}
 
-		static readonly ILog Log = LogManager.GetLogger("VisualStudio");
+		static readonly ILogger Log = LogManager.GetLogger("VisualStudio");
 		static readonly string[] s_knownVisualStudioVersions = { "9", "10", "11", "12" };
 	}
 }

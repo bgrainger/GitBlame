@@ -8,10 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Common.Logging;
 using DiffMatchPatch;
 using GitBlame.Utility;
 using LibGit2Sharp;
+using NLog;
 
 namespace GitBlame.Models
 {
@@ -426,12 +426,12 @@ namespace GitBlame.Models
 			}
 			while (currentDirectory is object);
 
-			Log.WarnFormat("Can't find .git directory for {0}", filePath);
+			Log.Warn("Can't find .git directory for {0}", filePath);
 			gitDirectory = null;
 			fileName = null;
 			return false;
 		}
 
-		static readonly ILog Log = LogManager.GetLogger("GitWrapper");
+		static readonly ILogger Log = LogManager.GetLogger("GitWrapper");
 	}
 }

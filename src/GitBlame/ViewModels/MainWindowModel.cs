@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
-using Common.Logging;
+using NLog;
 using ReactiveUI;
 
 namespace GitBlame.ViewModels
@@ -32,7 +32,7 @@ namespace GitBlame.ViewModels
 				if (value is null)
 					Log.Info("Position := (null)");
 				else
-					Log.InfoFormat("Position := Repo={0}, File={1}, CommitId={2}, LineNumber={3}", value.RepoPath, value.FileName, value.CommitId, value.LineNumber);
+					Log.Info("Position := Repo={0}, File={1}, CommitId={2}, LineNumber={3}", value.RepoPath, value.FileName, value.CommitId, value.LineNumber);
 
 				this.RaiseAndSetIfChanged(ref m_position, value);
 			}
@@ -40,7 +40,7 @@ namespace GitBlame.ViewModels
 
 		public void NavigateTo(BlamePositionModel? position)
 		{
-			Log.DebugFormat("NavigateTo({0})", position is null ? "null" : "position");
+			Log.Debug("NavigateTo({0})", position is null ? "null" : "position");
 
 			if (Position is object)
 				m_positionHistory.Push(Position);
@@ -72,7 +72,7 @@ namespace GitBlame.ViewModels
 
 		public string WindowTitle => m_windowTitle.Value;
 
-		static readonly ILog Log = LogManager.GetLogger("MainWindow");
+		static readonly ILogger Log = LogManager.GetLogger("MainWindow");
 
 		readonly Stack<BlamePositionModel> m_positionHistory;
 		readonly Stack<BlamePositionModel> m_positionFuture;

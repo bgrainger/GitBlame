@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-using Common.Logging;
 using GitBlame.Utility;
 using Microsoft.Win32;
+using NLog;
 
 namespace GitBlame.Analytics
 {
@@ -64,17 +64,17 @@ namespace GitBlame.Analytics
 			Uri uri = new Uri("https://ssl.google-analytics.com/collect");
 			try
 			{
-                using var content = new StringContent(sb.ToString());
+				using var content = new StringContent(sb.ToString());
 				await m_httpClient.PostAsync(uri, content).ConfigureAwait(false);
-				Log.InfoFormat("Successfully posted {0}", sb.ToString());
+				Log.Info("Successfully posted {0}", sb.ToString());
 			}
 			catch (HttpRequestException ex)
 			{
-				Log.WarnFormat("Couldn't POST to Google Analytics: {0}", ex, ex);
+				Log.Warn(ex, "Couldn't POST to Google Analytics: {0}", ex);
 			}
 			catch (TaskCanceledException ex)
 			{
-				Log.WarnFormat("Couldn't POST to Google Analytics: {0}.", ex, ex);
+				Log.Warn(ex, "Couldn't POST to Google Analytics: {0}.", ex);
 			}
 		}
 
@@ -117,7 +117,7 @@ namespace GitBlame.Analytics
 			sb.Append(Uri.EscapeDataString(value));
 		}
 
-		static readonly ILog Log = LogManager.GetLogger("GoogleAnalytics");
+		static readonly ILogger Log = LogManager.GetLogger("GoogleAnalytics");
 
 		readonly string m_trackingId;
 		readonly string m_appName;

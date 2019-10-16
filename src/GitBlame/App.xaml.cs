@@ -6,10 +6,10 @@ using System.IO;
 using System.Reflection;
 using System.Runtime;
 using System.Windows;
-using Common.Logging;
 using GitBlame.Analytics;
 using GitBlame.Utility;
 using GitBlame.ViewModels;
+using NLog;
 using ReactiveUI;
 
 namespace GitBlame
@@ -29,7 +29,7 @@ namespace GitBlame
 			ProfileOptimization.SetProfileRoot(profilePath);
 			ProfileOptimization.StartProfile("Startup");
 
-			Log.DebugFormat("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
+			Log.Debug("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
 
 			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
 
@@ -37,14 +37,14 @@ namespace GitBlame
 			{
 				if (ea.ExceptionObject is Exception exception)
 				{
-					Log.FatalFormat("Unhandled Exception: {0} {1}", exception, exception.GetType(), exception.Message);
+					Log.Fatal(exception, "Unhandled Exception: {0} {1}", exception.GetType(), exception.Message);
 #if !DEVELOPMENT
 					m_analyticsClient.SubmitExceptionAsync(exception, true);
 #endif
 				}
 				else
 				{
-					Log.FatalFormat("Unhandled Error: {0}", ea.ExceptionObject);
+					Log.Fatal("Unhandled Error: {0}", ea.ExceptionObject);
 				}
 			};
 
@@ -58,7 +58,7 @@ namespace GitBlame
 			var sessionStart = m_analyticsClient.SubmitSessionStartAsync();
 
 			foreach (var arg in e.Args)
-				Log.InfoFormat("Command-line arg: {0}", arg);
+				Log.Info("Command-line arg: {0}", arg);
 
 			MainWindowModel mainWindowModel = m_app.MainWindow;
 			BlamePositionModel? position = null;
@@ -96,7 +96,7 @@ namespace GitBlame
 			base.OnExit(e);
 		}
 
-		static readonly ILog Log = LogManager.GetLogger("App");
+		static readonly ILogger Log = LogManager.GetLogger("App");
 
 		readonly AppModel m_app;
 		readonly GoogleAnalyticsClient m_analyticsClient;
