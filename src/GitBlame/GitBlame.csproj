@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -16,13 +16,13 @@
     <PackageReference Include="Common.Logging.NLog32" Version="3.4.1" />
     <PackageReference Include="LibGit2Sharp" Version="0.26.1" />
     <PackageReference Include="LibGit2Sharp.NativeBinaries" Version="2.0.289" />
-    <PackageReference Include="MahApps.Metro" Version="2.0.0-alpha0490" />
+    <PackageReference Include="MahApps.Metro" Version="2.0.0-alpha0531" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NLog" Version="3.2.0.0" />
-    <PackageReference Include="reactiveui" Version="10.3.6" />
+    <PackageReference Include="reactiveui" Version="10.5.7" />
   </ItemGroup>
 
   <ItemGroup>
