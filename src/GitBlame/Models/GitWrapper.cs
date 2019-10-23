@@ -211,7 +211,8 @@ namespace GitBlame.Models
 				{
 					line = reader.ReadLine()!;
 					var tagValue = line.SplitOnSpace();
-					tagValues.Add(tagValue.Before, tagValue.After);
+					if (tagValue.After is object)
+						tagValues.Add(tagValue.Before, tagValue.After);
 				} while (!tagValues.ContainsKey("filename"));
 
 				// check if this is a new commit

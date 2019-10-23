@@ -24,7 +24,7 @@ namespace GitBlame.Utility
 		/// <returns>The two parts of the string (before and after the first space).</returns>
 		/// <remarks>The space is not included in the split string. If <paramref name="value"/> does not contain a space,
 		/// <c>Item1</c> will be set to <paramref name="value"/> and <c>Item2</c> will be <c>null</c>.</remarks>
-		public static (string Before, string After) SplitOnSpace(this string value)
+		public static (string Before, string? After) SplitOnSpace(this string value)
 		{
 			int spaceIndex = value.IndexOf(' ');
 			if (spaceIndex >= 0)
@@ -35,7 +35,7 @@ namespace GitBlame.Utility
 			}
 			else
 			{
-				throw new InvalidOperationException("Expected a space in " + value);
+				return (value, default);
 			}
 		}
 
