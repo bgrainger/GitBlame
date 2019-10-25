@@ -1,14 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
+    <VersionPrefix>0.6.0</VersionPrefix>
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>App.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
+    <Title>GitBlame</Title>
+    <Description>Git Blame GUI for Windows</Description>
+    <Copyright>Copyright 2011–2019 Bradley Grainger</Copyright>
+    <Authors>Bradley Grainger</Authors>
   </PropertyGroup>
 
   <ItemGroup>
