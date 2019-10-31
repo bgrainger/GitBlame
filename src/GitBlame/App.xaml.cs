@@ -9,6 +9,8 @@ using System.Windows;
 using GitBlame.Analytics;
 using GitBlame.Utility;
 using GitBlame.ViewModels;
+using Microsoft.AppCenter;
+using Microsoft.AppCenter.Crashes;
 using NLog;
 using ReactiveUI;
 
@@ -54,6 +56,9 @@ namespace GitBlame
 		protected override async void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
+
+			AppCenter.SetCountryCode(RegionInfo.CurrentRegion.TwoLetterISORegionName);
+			AppCenter.Start("e9b510a9-904c-475b-8055-7a0f931beb8d", typeof(Microsoft.AppCenter.Analytics.Analytics), typeof(Crashes));
 
 			var sessionStart = m_analyticsClient.SubmitSessionStartAsync();
 
