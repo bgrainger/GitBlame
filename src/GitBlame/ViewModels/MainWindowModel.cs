@@ -13,11 +13,11 @@ namespace GitBlame.ViewModels
 			m_positionHistory = new Stack<BlamePositionModel>();
 			m_positionFuture = new Stack<BlamePositionModel>();
 
-			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x is null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty(this, x => x.WindowTitle);
+			m_windowTitle = this.WhenAny(x => x.Position, x => x.Value).Select(x => (x is null ? "" : Path.GetFileName(x.FileName) + " - ") + "GitBlame").ToProperty<MainWindowModel, string>(this, x => x.WindowTitle);
 
 			var openFileNotifications = this.WhenAny(x => x.Position, x => x.Value)
 				.Select(x => x is null ? new OpenFileNotification() : x.RepoPath is null ? new OpenFileNotification(x.FilePath) : null);
-			var notifications = openFileNotifications.Cast<NotificationBase?>().StartWith(default(NotificationBase))
+			var notifications = openFileNotifications.Select(x => (NotificationBase?) x).StartWith(default(NotificationBase))
 				.DistinctUntilChanged();
 			m_notification = notifications.ToProperty(this, x => x.Notification);
 		}

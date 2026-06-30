@@ -54,22 +54,6 @@ namespace GitBlame.Utility
 			}
 		}
 
-		/// <summary>
-		/// Creates a dictionary from key value pairs.
-		/// </summary>
-		/// <typeparam name="TKey">The type of the key.</typeparam>
-		/// <typeparam name="TValue">The type of the value.</typeparam>
-		/// <param name="pairs">The key value pairs.</param>
-		/// <returns>The dictionary.</returns>
-		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> pairs)
-			where TKey : struct
-		{
-			var dict = new Dictionary<TKey, TValue>();
-			foreach (var pair in pairs ?? throw new ArgumentNullException(nameof(pairs)))
-				dict.Add(pair.Key, pair.Value);
-			return dict;
-		}
-
 		private class Grouping<TKey, TSource> : IGrouping<TKey, TSource>, ICollection<TSource>
 		{
 			public Grouping(TKey key, ReadOnlyCollection<TSource> list)

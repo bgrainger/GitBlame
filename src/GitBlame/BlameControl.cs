@@ -66,7 +66,7 @@ namespace GitBlame
 				.CombineLatest(canShowTooltip, (l, r) => new { Commit = l, CanShowTooltip = r })
 				.Where(x => x.Commit is object && x.CanShowTooltip)
 				.Select(x => x.Commit!)
-				.ObserveOn(RxApp.MainThreadScheduler)
+				.ObserveOn(RxSchedulers.MainThreadScheduler)
 				.Subscribe(ShowCommitTooltip);
 		}
 
@@ -91,7 +91,7 @@ namespace GitBlame
 			m_blame = blame;
 			m_layout = new BlameLayout(blame).WithTopLineNumber(1).WithLineHeight(oldLineHeight);
 			m_lineCount = blame.Blocks.Sum(b => b.LineCount);
-			m_blameSubscription = Observable.FromEventPattern<PropertyChangedEventArgs>(m_blame, "PropertyChanged").ObserveOn(RxApp.MainThreadScheduler).Subscribe(x => OnBlameResultPropertyChanged(x.EventArgs));
+			m_blameSubscription = Observable.FromEventPattern<PropertyChangedEventArgs>(m_blame, "PropertyChanged").ObserveOn(RxSchedulers.MainThreadScheduler).Subscribe(x => OnBlameResultPropertyChanged(x.EventArgs));
 
 			m_hoverCommitId = null;
 			m_selectedCommitId = null;

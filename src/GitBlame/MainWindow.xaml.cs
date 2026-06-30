@@ -108,7 +108,7 @@ namespace GitBlame
 				try
 				{
 					var position = m_model.Position;
-					var arguments = position is null ? null : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
+					var arguments = position is null ? "" : "/restart \"{0}\" \"{1}\" {2} {3}".FormatInvariant(position.RepoPath, position.FileName, position.CommitId ?? "null", Blame.TopLineNumber ?? 1);
 					Process.Start(path, arguments);
 					Application.Current.Shutdown(0);
 				}

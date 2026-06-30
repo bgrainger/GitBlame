@@ -1,32 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>0.6.0</VersionPrefix>
+    <VersionPrefix>0.7.0</VersionPrefix>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>App.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <Title>GitBlame</Title>
     <Description>Git Blame GUI for Windows</Description>
-    <Copyright>Copyright 2011–2019 Bradley Grainger</Copyright>
+    <Copyright>Copyright 2011–2026 Bradley Grainger</Copyright>
     <Authors>Bradley Grainger</Authors>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LibGit2Sharp" Version="0.26.1" />
-    <PackageReference Include="LibGit2Sharp.NativeBinaries" Version="2.0.289" />
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
+    <PackageReference Include="LibGit2Sharp.NativeBinaries" Version="2.0.323" />
     <PackageReference Include="MahApps.Metro" Version="2.0.0-alpha0531" />
-    <PackageReference Include="Microsoft.AppCenter.Analytics" Version="2.5.0" />
-    <PackageReference Include="Microsoft.AppCenter.Crashes" Version="2.5.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="NLog" Version="4.6.7" />
-    <PackageReference Include="reactiveui" Version="10.5.7" />
+    <PackageReference Include="ReactiveUI.WPF" Version="23.2.28" />
   </ItemGroup>
 
   <ItemGroup>

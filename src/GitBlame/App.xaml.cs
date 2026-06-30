@@ -6,13 +6,9 @@ using System.IO;
 using System.Reflection;
 using System.Runtime;
 using System.Windows;
-using GitBlame.Analytics;
-using GitBlame.Utility;
 using GitBlame.ViewModels;
-using Microsoft.AppCenter;
-using Microsoft.AppCenter.Crashes;
 using NLog;
-using ReactiveUI;
+using ReactiveUI.Builder;
 
 namespace GitBlame
 {
@@ -23,8 +19,10 @@ namespace GitBlame
 	{
 		public App()
 		{
-			// this doesn't appear to be configured automatically for WPF in .NET Core 3.0
-			RxApp.MainThreadScheduler = new DispatcherScheduler();
+			// initialize ReactiveUI with the WPF platform services (schedulers, binding type converters, etc.)
+			RxAppBuilder.CreateReactiveUIBuilder()
+				.WithWpf()
+				.Build();
 
 			string profilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"GitBlame\Profile");
 			Directory.CreateDirectory(profilePath);
@@ -33,16 +31,11 @@ namespace GitBlame
 
 			Log.Debug("Starting new application; version {0}.", Assembly.GetExecutingAssembly().GetName().Version);
 
-			m_analyticsClient = new GoogleAnalyticsClient("UA-25641987-2", "GitBlame", new GoogleAnalyticsStatisticsProvider());
-
 			AppDomain.CurrentDomain.UnhandledException += (s, ea) =>
 			{
 				if (ea.ExceptionObject is Exception exception)
 				{
 					Log.Fatal(exception, "Unhandled Exception: {0} {1}", exception.GetType(), exception.Message);
-#if !DEVELOPMENT
-					m_analyticsClient.SubmitExceptionAsync(exception, true);
-#endif
 				}
 				else
 				{
@@ -56,11 +49,6 @@ namespace GitBlame
 		protected override async void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
-
-			AppCenter.SetCountryCode(RegionInfo.CurrentRegion.TwoLetterISORegionName);
-			AppCenter.Start("e9b510a9-904c-475b-8055-7a0f931beb8d", typeof(Microsoft.AppCenter.Analytics.Analytics), typeof(Crashes));
-
-			var sessionStart = m_analyticsClient.SubmitSessionStartAsync();
 
 			foreach (var arg in e.Args)
 				Log.Info("Command-line arg: {0}", arg);
@@ -89,14 +77,10 @@ namespace GitBlame
 
 			Window window = new MainWindow(mainWindowModel);
 			window.Show();
-
-			await sessionStart.ConfigureAwait(true);
-			await m_analyticsClient.SubmitAppViewAsync("MainWindow").ConfigureAwait(true);
 		}
 
 		protected override void OnExit(ExitEventArgs e)
 		{
-			m_analyticsClient.SubmitSessionEndAsync().Wait();
 			Log.Debug("Shutting down application.");
 			base.OnExit(e);
 		}
@@ -104,6 +88,5 @@ namespace GitBlame
 		static readonly ILogger Log = LogManager.GetLogger("App");
 
 		readonly AppModel m_app;
-		readonly GoogleAnalyticsClient m_analyticsClient;
 	}
 }
